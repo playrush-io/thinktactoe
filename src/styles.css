@@ -1,0 +1,345 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background: linear-gradient(135deg, #1a2634 0%, #0f1a27 100%);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #e0f7ff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.menu {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 10px rgba(0, 212, 255, 0.1);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    width: min(320px, 90vw);
+    animation: fadeIn 0.5s ease-out;
+}
+
+.hidden {
+    display: none;
+}
+
+h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #00d4ff;
+    margin-bottom: 2rem;
+    letter-spacing: 0.05em;
+    text-shadow: 0 0 12px rgba(0, 212, 255, 0.6), 0 0 20px rgba(0, 212, 255, 0.3);
+    animation: glowPulse 3s ease-in-out infinite;
+}
+
+button {
+    display: block;
+    width: 100%;
+    margin: 1rem 0;
+    padding: 0.8rem;
+    font-size: 1.2rem;
+    font-weight: 500;
+    background: linear-gradient(45deg, #00d4ff, #007bff);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+button:hover:not(:disabled) {
+    background: linear-gradient(45deg, #00b7eb, #005ff2);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(0, 212, 255, 0.6);
+}
+
+button:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 2px 10px rgba(0, 212, 255, 0.3);
+}
+
+button:disabled {
+    background: linear-gradient(45deg, #666, #555);
+    color: #aaa;
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.7;
+    animation: none;
+}
+
+button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.4s, height 0.4s;
+    pointer-events: none;
+}
+
+button:hover:not(:disabled)::after {
+    width: 200%;
+    height: 200%;
+}
+
+#multiplayer {
+    animation: comingSoon 2s ease-in-out infinite;
+}
+
+#game {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+#game-status {
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #00d4ff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    animation: statusGlow 2s ease-in-out infinite;
+    white-space: nowrap;
+}
+
+#score-display {
+    position: absolute;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.8rem 1.5rem;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    color: #e0f7ff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+#score-player1, #score-ties, #score-player2 {
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    transition: transform 0.3s, color 0.3s;
+}
+
+#score-player1:hover, #score-ties:hover, #score-player2:hover {
+    transform: scale(1.1);
+    color: #00ff88;
+}
+
+#new-game, #back-to-menu {
+    position: absolute;
+    bottom: 30px;
+    width: 140px;
+    padding: 0.7rem;
+    font-size: 1.1rem;
+    background: linear-gradient(45deg, #ff4d4d, #e63939);
+}
+
+#new-game:hover:not(:disabled), #back-to-menu:hover:not(:disabled) {
+    background: linear-gradient(45deg, #e63939, #cc3333);
+    box-shadow: 0 6px 20px rgba(255, 77, 77, 0.6);
+}
+
+#new-game {
+    left: calc(50% - 150px);
+}
+
+#back-to-menu {
+    left: calc(50% + 10px);
+}
+
+#settings-menu {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    width: min(320px, 90vw);
+    animation: fadeIn 0.5s ease-out;
+}
+
+#settings-menu h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #00d4ff;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 0 12px rgba(0, 212, 255, 0.6);
+    animation: glowPulse 3s ease-in-out infinite;
+}
+
+label {
+    display: block;
+    margin: 1.2rem 0 0.5rem;
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: #e0f7ff;
+    letter-spacing: 0.02em;
+}
+
+select {
+    display: inline-block;
+    width: 100%;
+    margin: 0.5rem 0;
+    padding: 0.7rem;
+    font-size: 1.1rem;
+    border-radius: 10px;
+    border: 1px solid #00d4ff;
+    background: rgba(255, 255, 255, 0.05);
+    color: #e0f7ff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="%2300d4ff" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+}
+
+select:focus {
+    outline: none;
+    border-color: #00ff88;
+    box-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+select option {
+    background: #1a2634;
+    color: #e0f7ff;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translate(-50%, -60%); }
+    to { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+@keyframes glowPulse {
+    0%, 100% { text-shadow: 0 0 12px rgba(0, 212, 255, 0.6), 0 0 20px rgba(0, 212, 255, 0.3); }
+    50% { text-shadow: 0 0 18px rgba(0, 212, 255, 0.8), 0 0 30px rgba(0, 212, 255, 0.5); }
+}
+
+@keyframes statusGlow {
+    0%, 100% { box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), 0 0 10px rgba(0, 212, 255, 0.3); }
+    50% { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 0 15px rgba(0, 212, 255, 0.5); }
+}
+
+@keyframes comingSoon {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 0.9; }
+}
+
+@media (max-width: 600px) {
+    .menu, #settings-menu {
+        width: 90vw;
+        padding: 1.5rem;
+    }
+
+    h1, #settings-menu h2 {
+        font-size: 2rem;
+    }
+
+    button {
+        font-size: 1rem;
+        padding: 0.6rem;
+    }
+
+    #game-status {
+        font-size: 1.1rem;
+        padding: 0.6rem 1.2rem;
+    }
+
+    #score-display {
+        font-size: 0.9rem;
+        padding: 0.6rem 1rem;
+        gap: 1rem;
+    }
+
+    #new-game, #back-to-menu {
+        width: 100px;
+        font-size: 0.9rem;
+        bottom: 15px;
+    }
+
+    #new-game {
+        left: calc(50% - 110px);
+    }
+
+    #back-to-menu {
+        left: calc(50% + 10px);
+    }
+
+    select {
+        font-size: 1rem;
+        padding: 0.6rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    .menu, #settings-menu {
+        width: 360px;
+        padding: 3rem;
+    }
+
+    h1, #settings-menu h2 {
+        font-size: 3rem;
+    }
+
+    button {
+        font-size: 1.3rem;
+        padding: 1rem;
+    }
+
+    #game-status {
+        font-size: 1.5rem;
+        padding: 1.2rem 2.5rem;
+    }
+
+    #score-display {
+        font-size: 1.2rem;
+        padding: 1rem 2rem;
+    }
+}

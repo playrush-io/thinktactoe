@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe</title>
+    <link rel="stylesheet" href="/src/styles.css">
+</head>
+<body>
+    <div id="menu">
+        <h1>Tic-Tac-Toe</h1>
+        <button id="quickplay">Quick Play</button>
+        <button id="vscomputer">Vs Computer</button>
+        <button id="multiplayer" disabled>Multiplayer (Coming Soon)</button>
+        <button id="settings">Settings</button>
+    </div>
+    <div id="game" class="hidden">
+        <canvas id="canvas"></canvas>
+        <div id="game-status">Player 1's turn</div>
+        <div id="score-display">
+            <span id="score-player1">Player 1: 0</span>
+            <span id="score-player2">Player 2: 0</span>
+            <span id="score-ties">Ties: 0</span>
+        </div>
+        <button id="new-game">New Game</button>
+        <button id="back-to-menu">Back to Menu</button>
+    </div>
+    <div id="settings-menu" class="hidden">
+        <h2>Settings</h2>
+        <label for="difficulty">Difficulty:</label>
+        <select id="difficulty">
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+        </select>
+        <button id="reset-scores">Reset Scores</button>
+        <button id="back">Back</button>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
