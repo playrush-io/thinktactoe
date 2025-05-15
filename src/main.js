@@ -102,7 +102,7 @@ function init() {
     scene.add(pointLight);
 
     const rgbeLoader = new RGBELoader();
-    rgbeLoader.load('src/assets/studio_small_04_1k.hdr', (texture) => {
+    rgbeLoader.load('/assets/studio_small_04_1k.hdr', (texture) => {
         texture.mapping = THREE.EquirectangularReflectionMapping;
         scene.environment = texture;
         console.log('HDR texture loaded');
@@ -110,9 +110,9 @@ function init() {
         console.error('Failed to load HDR:', err.message);
     });
 
-    clickSound = new Audio('src/assets/click.wav');
-    winSound = new Audio('src/assets/wins.wav');
-    tieSound = new Audio('src/assets/tie.wav');
+    clickSound = new Audio('/assets/click.wav');
+    winSound = new Audio('/assets/wins.wav');
+    tieSound = new Audio('/assets/tie.wav');
 
     createBoard();
     updateScoreDisplay();
@@ -157,17 +157,17 @@ function createBoard() {
     cells = [];
 
     const textureLoader = new THREE.TextureLoader();
-    const woodTexture = textureLoader.load('src/assets/cartoon-style-wood-texture/882.jpg', () => {
+    const woodTexture = textureLoader.load('/assets/cartoon-style-wood-texture/882.jpg', () => {
         console.log('Wood texture loaded');
     }, undefined, (err) => {
         console.error('Failed to load wood texture:', err.message);
     });
-    const woodNormal = textureLoader.load('src/assets/cartoon-style-wood-texture/wood.jpg', () => {
+    const woodNormal = textureLoader.load('/assets/cartoon-style-wood-texture/882_normal.jpg', () => {
         console.log('Wood normal map loaded');
     }, undefined, (err) => {
         console.error('Failed to load wood normal map:', err.message);
     });
-    const cellNormal = textureLoader.load('src/assets/concrete_normal.jpg', () => {
+    const cellNormal = textureLoader.load('/assets/concrete_normal.jpg', () => {
         console.log('Cell normal map loaded');
     }, undefined, (err) => {
         console.error('Failed to load cell normal map:', err.message);
@@ -210,7 +210,7 @@ function createBoard() {
     }
 
     const textureLoaderLine = new THREE.TextureLoader();
-    const lineTexture = textureLoaderLine.load('src/assets/spark.png', () => {
+    const lineTexture = textureLoaderLine.load('/assets/spark.png', () => {
         console.log('Line spark texture loaded');
     }, undefined, (err) => {
         console.error('Failed to load line spark texture:', err.message);
@@ -260,7 +260,7 @@ function createMarker(type, position, index) {
     let metalTexture, metalNormal;
 
     metalTexture = textureLoader.load(
-        'src/assets/Poliigon_StoneQuartzite_8060/2K/Poliigon_StoneQuartzite_8060_BaseColor.jpg',
+        '/assets/Poliigon_StoneQuartzite_8060/2K/Poliigon_StoneQuartzite_8060_BaseColor.jpg',
         () => console.log('Quartzite texture loaded'),
         undefined,
         (err) => console.error('Failed to load quartzite texture:', err.message)
@@ -268,7 +268,7 @@ function createMarker(type, position, index) {
 
     try {
         metalNormal = textureLoader.load(
-            'src/assets/Poliigon_StoneQuartzite_8060/2K/Poliigon_StoneQuartzite_8060_Roughness.jpg',
+            '/assets/Poliigon_StoneQuartzite_8060/2K/Poliigon_StoneQuartzite_8060_normal.jpg',
             () => console.log('Quartzite normal map loaded'),
             undefined,
             (err) => {
@@ -353,7 +353,7 @@ function createParticleBurst(position, color) {
     const particleCount = 10;
     const textureLoader = new THREE.TextureLoader();
     const sparkTexture = textureLoader.load(
-        'src/assets/spark.png',
+        '/assets/spark.png',
         () => console.log('Spark texture loaded'),
         undefined,
         (err) => console.error('Failed to load spark texture:', err.message)

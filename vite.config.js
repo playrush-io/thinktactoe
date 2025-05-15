@@ -1,8 +1,19 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: './',
-  server: {
-    open: true,
+  assetsInclude: ['**/*.jpg', '**/*.png', '**/*.hdr', '**/*.wav'],
+  build: {
+    rollupOptions: {
+      input: {
+        main: './index.html'
+      }
+    },
+    outDir: 'dist',
+    assetsDir: 'assets'
   },
-})
+  server: {
+    fs: {
+      allow: ['.']
+    }
+  }
+});
