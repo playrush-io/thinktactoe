@@ -13,6 +13,7 @@
         <button id="vscomputer">Vs Computer</button>
         <button id="multiplayer" disabled>Multiplayer (Coming Soon)</button>
         <button id="settings">Settings</button>
+        <button id="how-to-play-btn">How to Play</button>
     </div>
     <div id="game" class="hidden">
         <canvas id="canvas"></canvas>
@@ -35,6 +36,18 @@
         </select>
         <button id="reset-scores">Reset Scores</button>
         <button id="back">Back</button>
+    </div>
+    <div id="how-to-play" class="hidden">
+        <h2>How to Play</h2>
+        <p>Test your skills in this classic game of Tic-Tac-Toe!</p>
+        <ul>
+            <li>Player 1 uses <b>X</b>, Player 2 (or Computer) uses <b>O</b>.</li>
+            <li>Click a cell to place your symbol.</li>
+            <li>Win by aligning three of your symbols in a row, column, or diagonal.</li>
+            <li>Choose <b>Quick Play</b> for two-player mode or <b>Vs Computer</b> to challenge the AI.</li>
+            <li>Adjust difficulty in <b>Settings</b> for a tougher AI opponent.</li>
+        </ul>
+        <button id="back-from-how-to-play">Back</button>
     </div>
     <script type="module" src="/src/main.js"></script>
 </body>

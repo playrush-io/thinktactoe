@@ -19,9 +19,11 @@ let markers = [];
 let particles = [];
 let raycaster = new THREE.Raycaster();
 let mouse = new THREE.Vector2();
-let clickSound, winSound, tieSound;
+let clickSound, winSound, loseSound, tieSound, spinSound;
 let scores = loadData().scores;
 let winningLine = null;
+let isTouching = false;
+let boardBase = null; // Reference to the board mesh
 
 const winningCombinations = [
     [0,1,2], [3,4,5], [6,7,8], // Rows
@@ -33,7 +35,7 @@ function init() {
     const savedData = loadData();
     difficulty = savedData.settings.difficulty;
 
-    const requiredElements = ['quickplay', 'vscomputer', 'multiplayer', 'settings', 'back', 'back-to-menu', 'new-game', 'difficulty', 'reset-scores', 'canvas', 'menu', 'game', 'settings-menu', 'game-status', 'score-player1', 'score-player2', 'score-ties'];
+    const requiredElements = ['quickplay', 'vscomputer', 'multiplayer', 'settings', 'how-to-play-btn', 'back', 'back-to-menu', 'new-game', 'difficulty', 'reset-scores', 'canvas', 'menu', 'game', 'settings-menu', 'how-to-play', 'back-from-how-to-play', 'game-status', 'score-player1', 'score-player2', 'score-ties'];
     for (const id of requiredElements) {
         if (!document.getElementById(id)) {
             console.warn(`DOM element #${id} not found`);
@@ -43,8 +45,10 @@ function init() {
     const quickplay = document.getElementById('quickplay');
     const vscomputer = document.getElementById('vscomputer');
     const settingsBtn = document.getElementById('settings');
+    const howToPlayBtn = document.getElementById('how-to-play-btn');
     const back = document.getElementById('back');
     const backToMenu = document.getElementById('back-to-menu');
+    const backFromHowToPlay = document.getElementById('back-from-how-to-play');
     const newGame = document.getElementById('new-game');
     const difficultySelect = document.getElementById('difficulty');
     const resetScoresBtn = document.getElementById('reset-scores');
@@ -52,8 +56,10 @@ function init() {
     if (quickplay) quickplay.addEventListener('click', () => startGame(false));
     if (vscomputer) vscomputer.addEventListener('click', () => startGame(true));
     if (settingsBtn) settingsBtn.addEventListener('click', showSettings);
+    if (howToPlayBtn) howToPlayBtn.addEventListener('click', showHowToPlay);
     if (back) back.addEventListener('click', showMainMenu);
     if (backToMenu) backToMenu.addEventListener('click', showMainMenu);
+    if (backFromHowToPlay) backFromHowToPlay.addEventListener('click', showMainMenu);
     if (newGame) newGame.addEventListener('click', restartGame);
     if (difficultySelect) {
         difficultySelect.addEventListener('change', (e) => {
@@ -69,6 +75,7 @@ function init() {
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -84,8 +91,9 @@ function init() {
     composer.addPass(bloomPass);
 
     controls = new OrbitControls(camera, renderer.domElement);
-    controls.minDistance = 5;
-    controls.maxDistance = 15;
+    controls.enableZoom = window.innerWidth > 480;
+    updateCameraDistance();
+    controls.enablePan = false;
     camera.position.set(6, 6, 6);
     controls.update();
 
@@ -112,13 +120,19 @@ function init() {
 
     clickSound = new Audio('/assets/click.wav');
     winSound = new Audio('/assets/wins.wav');
+    loseSound = new Audio('/assets/lose.mp3');
     tieSound = new Audio('/assets/tie.wav');
+    spinSound = new Audio('/assets/spin.mp3');
 
     createBoard();
     updateScoreDisplay();
 
     const canvas = document.getElementById('canvas');
-    if (canvas) canvas.addEventListener('mousemove', onMouseMove);
+    if (canvas) {
+        canvas.addEventListener('mousemove', onMouseMove);
+        canvas.addEventListener('click', onCanvasClick);
+        canvas.addEventListener('touchstart', onCanvasTouch, { passive: false });
+    }
 
     const savedGame = savedData.gameState;
     if (savedGame && isValidGameState(savedGame)) {
@@ -148,30 +162,50 @@ function init() {
         }
     }
 
-    window.addEventListener('resize', onWindowResize);
+    window.addEventListener('resize', () => {
+        onWindowResize();
+        updateCameraDistance();
+    });
     animate();
+}
+
+function updateCameraDistance() {
+    const width = window.innerWidth;
+    controls.minDistance = width <= 480 ? 4 : 5;
+    controls.maxDistance = width >= 1200 ? 20 : 15;
+    controls.update();
 }
 
 function createBoard() {
     cells.forEach(cell => scene.remove(cell));
     cells = [];
+    if (boardBase) scene.remove(boardBase); // Remove old board if exists
 
     const textureLoader = new THREE.TextureLoader();
-    const woodTexture = textureLoader.load('/assets/cartoon-style-wood-texture/882.jpg', () => {
-        console.log('Wood texture loaded');
-    }, undefined, (err) => {
-        console.error('Failed to load wood texture:', err.message);
-    });
-    const woodNormal = textureLoader.load('/assets/cartoon-style-wood-texture/882_normal.jpg', () => {
-        console.log('Wood normal map loaded');
-    }, undefined, (err) => {
-        console.error('Failed to load wood normal map:', err.message);
-    });
-    const cellNormal = textureLoader.load('/assets/concrete_normal.jpg', () => {
-        console.log('Cell normal map loaded');
-    }, undefined, (err) => {
-        console.error('Failed to load cell normal map:', err.message);
-    });
+    const woodTexture = textureLoader.load(
+        '/assets/cartoon-style-wood-texture/882.jpg',
+        () => console.log('Wood texture loaded'),
+        undefined,
+        (err) => {
+            console.error('Failed to load wood texture:', err.message);
+        }
+    );
+    const woodNormal = textureLoader.load(
+        '/assets/cartoon-style-wood-texture/882_normal.jpg',
+        () => console.log('Wood normal map loaded'),
+        undefined,
+        (err) => {
+            console.error('Failed to load wood normal map:', err.message);
+        }
+    );
+    const cellNormal = textureLoader.load(
+        '/assets/concrete_normal.jpg',
+        () => console.log('Cell normal map loaded'),
+        undefined,
+        (err) => {
+            console.error('Failed to load cell normal map:', err.message);
+        }
+    );
 
     const boardGeometry = new THREE.BoxGeometry(6, 0.4, 6, 32, 32, 32, { bevelEnabled: true, bevelSegments: 4, bevelSize: 0.05 });
     const boardMaterial = new THREE.MeshStandardMaterial({ 
@@ -183,7 +217,7 @@ function createBoard() {
         emissive: 0x222222,
         emissiveIntensity: 0.05
     });
-    const boardBase = new THREE.Mesh(boardGeometry, boardMaterial);
+    boardBase = new THREE.Mesh(boardGeometry, boardMaterial);
     boardBase.receiveShadow = true;
     scene.add(boardBase);
 
@@ -210,11 +244,14 @@ function createBoard() {
     }
 
     const textureLoaderLine = new THREE.TextureLoader();
-    const lineTexture = textureLoaderLine.load('/assets/spark.png', () => {
-        console.log('Line spark texture loaded');
-    }, undefined, (err) => {
-        console.error('Failed to load line spark texture:', err.message);
-    });
+    const lineTexture = textureLoaderLine.load(
+        '/assets/spark.png',
+        () => console.log('Line spark texture loaded'),
+        undefined,
+        (err) => {
+            console.error('Failed to load line spark texture:', err.message);
+        }
+    );
     const lineMaterial = new THREE.LineBasicMaterial({ 
         map: lineTexture,
         color: 0x00ffff,
@@ -235,22 +272,37 @@ function createBoard() {
     const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
     const gridLines = new THREE.LineSegments(lineGeometry, lineMaterial);
     scene.add(gridLines);
+}
 
-    const canvas = document.getElementById('canvas');
-    if (canvas) {
-        canvas.addEventListener('click', (event) => {
-            event.preventDefault();
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+function onCanvasClick(event) {
+    event.preventDefault();
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(cells);
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(cells);
 
-            if (intersects.length > 0 && gameActive) {
-                const index = intersects[0].object.userData.index;
-                makeMove(index);
-            }
-        });
+    if (intersects.length > 0 && gameActive) {
+        const index = intersects[0].object.userData.index;
+        makeMove(index);
+    }
+}
+
+function onCanvasTouch(event) {
+    if (isTouching) return;
+    isTouching = true;
+    setTimeout(() => { isTouching = false; }, 300);
+    event.preventDefault();
+    const touch = event.touches[0];
+    mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(cells);
+
+    if (intersects.length > 0 && gameActive) {
+        const index = intersects[0].object.userData.index;
+        makeMove(index);
     }
 }
 
@@ -263,23 +315,20 @@ function createMarker(type, position, index) {
         '/assets/Poliigon_StoneQuartzite_8060/2K/Poliigon_StoneQuartzite_8060_BaseColor.jpg',
         () => console.log('Quartzite texture loaded'),
         undefined,
-        (err) => console.error('Failed to load quartzite texture:', err.message)
+        (err) => {
+            console.error('Failed to load quartzite texture:', err.message);
+        }
     );
 
-    try {
-        metalNormal = textureLoader.load(
-            '/assets/Poliigon_StoneQuartzite_8060/2K/Poliigon_StoneQuartzite_8060_normal.jpg',
-            () => console.log('Quartzite normal map loaded'),
-            undefined,
-            (err) => {
-                console.warn('Failed to load quartzite normal map:', err.message);
-                metalNormal = null;
-            }
-        );
-    } catch (err) {
-        console.warn('Texture loader error for normal map:', err.message);
-        metalNormal = null;
-    }
+    metalNormal = textureLoader.load(
+        '/assets/Poliigon_StoneQuartzite_8060/2K/Poliigon_StoneQuartzite_8060_normal.jpg',
+        () => console.log('Quartzite normal map loaded'),
+        undefined,
+        (err) => {
+            console.warn('Failed to load quartzite normal map:', err.message);
+            metalNormal = textureLoader.load('/assets/concrete_normal.jpg', () => console.log('Fallback normal map loaded'));
+        }
+    );
 
     let geometry, material, marker;
 
@@ -356,7 +405,9 @@ function createParticleBurst(position, color) {
         '/assets/spark.png',
         () => console.log('Spark texture loaded'),
         undefined,
-        (err) => console.error('Failed to load spark texture:', err.message)
+        (err) => {
+            console.error('Failed to load spark texture:', err.message);
+        }
     );
     const geometry = new THREE.PlaneGeometry(0.1, 0.1);
 
@@ -490,7 +541,15 @@ function updateScore(winner) {
                 onComplete: () => gsap.to(scoreElement, { scale: 1, duration: 0.3 })
             });
         }
-        if (winSound) winSound.play().catch(e => console.warn('Win sound play error:', e));
+        if (winner === 'Player 1' && winSound) {
+            winSound.pause();
+            winSound.currentTime = 0;
+            winSound.play().catch(e => console.warn('Win sound play error:', e));
+        } else if (winner === 'Player 2' && loseSound) {
+            loseSound.pause();
+            loseSound.currentTime = 0;
+            loseSound.play().catch(e => console.warn('Lose sound play error:', e));
+        }
     } else {
         scores['Ties']++;
         saveData();
@@ -504,7 +563,11 @@ function updateScore(winner) {
                 onComplete: () => gsap.to(scoreTies, { scale: 1, duration: 0.3 })
             });
         }
-        if (tieSound) tieSound.play().catch(e => console.warn('Tie sound play error:', e));
+        if (tieSound) {
+            tieSound.pause();
+            tieSound.currentTime = 0;
+            tieSound.play().catch(e => console.warn('Tie sound play error:', e));
+        }
     }
     if (!gameActive) {
         saveData();
@@ -545,6 +608,13 @@ function onMouseMove(event) {
     }
 }
 
+function showHowToPlay() {
+    const menu = document.getElementById('menu');
+    const howToPlay = document.getElementById('how-to-play');
+    if (menu) menu.classList.add('hidden');
+    if (howToPlay) howToPlay.classList.remove('hidden');
+}
+
 function startGame(isVsComputer) {
     vsComputer = isVsComputer;
     board = Array(9).fill(null);
@@ -553,10 +623,12 @@ function startGame(isVsComputer) {
     winningLine = null;
     const menu = document.getElementById('menu');
     const settingsMenu = document.getElementById('settings-menu');
+    const howToPlay = document.getElementById('how-to-play');
     const game = document.getElementById('game');
     const gameStatus = document.getElementById('game-status');
     if (menu) menu.classList.add('hidden');
     if (settingsMenu) settingsMenu.classList.add('hidden');
+    if (howToPlay) howToPlay.classList.add('hidden');
     if (game) game.classList.remove('hidden');
     if (gameStatus) {
         gameStatus.textContent = `${currentPlayer}'s turn`;
@@ -586,6 +658,32 @@ function startGame(isVsComputer) {
 }
 
 function restartGame() {
+    // Spin the board before resetting
+    if (boardBase) {
+        if (spinSound) {
+            spinSound.pause();
+            spinSound.currentTime = 0;
+            spinSound.play().catch(e => console.warn('Spin sound play error:', e));
+        }
+        gsap.to(boardBase.rotation, {
+            y: "+=6.2832", // 360 degrees in radians (2π)
+            duration: 5,
+            ease: "power2.inOut",
+            onComplete: () => {
+                boardBase.rotation.y = 0; // Reset rotation
+                if (spinSound) {
+                    spinSound.pause();
+                    spinSound.currentTime = 0;
+                }
+                completeRestart();
+            }
+        });
+    } else {
+        completeRestart();
+    }
+}
+
+function completeRestart() {
     board = Array(9).fill(null);
     currentPlayer = 'Player 1';
     gameActive = true;
@@ -791,9 +889,11 @@ function showSettings() {
 function showMainMenu() {
     const game = document.getElementById('game');
     const settingsMenu = document.getElementById('settings-menu');
+    const howToPlay = document.getElementById('how-to-play');
     const menu = document.getElementById('menu');
     if (game) game.classList.add('hidden');
     if (settingsMenu) settingsMenu.classList.add('hidden');
+    if (howToPlay) howToPlay.classList.add('hidden');
     if (menu) menu.classList.remove('hidden');
     saveData();
 }
