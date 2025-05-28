@@ -202,14 +202,14 @@ function createBoard() {
         (err) => console.error('Failed to load cell normal map:', err.message)
     );
 
-    const boardScaleFactor = 3.0; // Increased to make board occupy ~50% of canvas
-    const cellScaleFactor = 4.0; // Increased to match larger board
+    const boardScaleFactor = 5.0; // Increased to make board occupy ~50% of canvas
+    const cellScaleFactor = 6.0; // Increased to match larger board
     const boardGeometry = new THREE.BoxGeometry(6 * boardScaleFactor, 0.4, 6 * boardScaleFactor, 32, 32, 32, { bevelEnabled: true, bevelSegments: 4, bevelSize: 0.05 });
     const boardMaterial = new THREE.MeshStandardMaterial({ 
         map: woodTexture, 
         normalMap: woodNormal,
         normalScale: new THREE.Vector2(1.5, 1.5),
-        roughness: 0.4, 
+        roughness: 0.5, 
         metalness: 0.05,
         emissive: 0x222222,
         emissiveIntensity: 0.05
@@ -314,7 +314,7 @@ function createMarker(type, position, index) {
     );
 
     metalNormal = textureLoader.load(
-        '/assets/Poliigon_StoneQuartzite_8060/2K/Poliigon_StoneQuartzite_8060_normal.jpg',
+        'public/assets/Poliigon_StoneQuartzite_8060/2K/Poliigon_StoneQuartzite_8060_Normal.png',
         () => console.log('Quartzite normal map loaded'),
         undefined,
         (err) => {
@@ -394,7 +394,7 @@ function createMarker(type, position, index) {
 
 function createParticleBurst(position, color) {
     const particleCount = 10;
-    const particleScaleFactor = 4.0; // Match cell scale
+    const particleScaleFactor = 6.0; // Match cell scale
     const textureLoader = new THREE.TextureLoader();
     const sparkTexture = textureLoader.load(
         '/assets/spark.png',
