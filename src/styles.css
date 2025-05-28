@@ -25,7 +25,7 @@ body {
   position: relative;
   z-index: 10;
   width: 100%;
-  max-width: 600px;
+  max-width: 1200px; /* Increased for larger board */
   min-height: 20vh;
   padding: 1.5rem;
   background: linear-gradient(180deg, rgba(30, 20, 10, 0.95), rgba(10, 5, 0, 0.85));
@@ -41,10 +41,10 @@ body {
 /* Canvas */
 #canvas {
   width: 100%;
-  max-width: 600px;
-  height: calc(100vw * 0.6);
-  max-height: 60vh;
-  min-height: 200px;
+  max-width: 1200px; /* Increased to support larger board */
+  height: calc(100vw * 0.8); /* Increased height ratio */
+  max-height: 80vh; /* Increased max-height */
+  min-height: 350px; /* Increased min-height */
   z-index: 5;
   margin: 0.5rem 0;
   touch-action: pinch-zoom;
@@ -57,7 +57,7 @@ body {
 
 /* Headings */
 h1, h2 {
-  font-size: clamp(1.4rem, 4vw, 1.8rem);
+  font-size: clamp(1.5rem, 4vw, 2rem); /* Slightly larger */
   color: #d4a017;
   text-shadow: 0 0 10px rgba(212, 160, 23, 0.8);
   margin-bottom: 1.5rem;
@@ -77,14 +77,14 @@ button {
   color: #2c1b0a;
   border: 2px solid #d4a017;
   border-radius: 8px;
-  padding: clamp(0.8rem, 2vw, 0.9rem) clamp(1.3rem, 3vw, 1.5rem);
+  padding: clamp(1rem, 2.5vw, 1.1rem) clamp(1.5rem, 3.5vw, 1.7rem); /* Larger */
   margin: 0.6rem;
-  font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+  font-size: clamp(1rem, 2.5vw, 1.2rem); /* Larger */
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.3s, box-shadow 0.3s;
   box-shadow: 0 0 12px rgba(212, 160, 23, 0.6);
-  min-width: clamp(140px, 30vw, 160px);
+  min-width: clamp(160px, 32vw, 180px); /* Larger */
   z-index: 15;
   animation: parchment-glow 2.5s infinite alternate ease-in-out;
 }
@@ -107,8 +107,8 @@ button:disabled {
 
 /* Game status */
 #game-status {
-  font-size: clamp(1rem, 3.5vw, 1.3rem);
-  padding: 0.7rem;
+  font-size: clamp(1.1rem, 3.5vw, 1.4rem); /* Larger */
+  padding: 0.8rem;
   background: rgba(30, 20, 10, 0.8);
   border: 2px solid #d4a017;
   border-radius: 8px;
@@ -116,7 +116,7 @@ button:disabled {
   text-shadow: 0 0 8px rgba(212, 160, 23, 0.7);
   margin: 0.6rem;
   width: 100%;
-  max-width: 220px;
+  max-width: 260px; /* Larger */
   animation: parchment-glow 2.5s infinite alternate ease-in-out;
 }
 
@@ -124,15 +124,15 @@ button:disabled {
 #score-display {
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
+  gap: 0.8rem;
   margin: 0.6rem;
   width: 100%;
-  max-width: 220px;
+  max-width: 260px; /* Larger */
 }
 
 #score-player1, #score-player2, #score-ties {
-  font-size: clamp(0.85rem, 2.5vw, 1rem);
-  padding: 0.6rem;
+  font-size: clamp(0.95rem, 2.5vw, 1.1rem); /* Larger */
+  padding: 0.7rem;
   background: rgba(30, 20, 10, 0.8);
   border: 2px solid #d4a017;
   border-radius: 8px;
@@ -144,10 +144,10 @@ button:disabled {
 #game-controls {
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
+  gap: 0.8rem;
   margin: 0.6rem;
   width: 100%;
-  max-width: 220px;
+  max-width: 260px; /* Larger */
 }
 
 /* Settings menu */
@@ -156,10 +156,10 @@ button:disabled {
   color: #2c1b0a;
   border: 2px solid #d4a017;
   border-radius: 8px;
-  padding: 0.7rem;
-  font-size: clamp(0.85rem, 2.5vw, 1rem);
+  padding: 0.8rem;
+  font-size: clamp(0.95rem, 2.5vw, 1.1rem); /* Larger */
   width: 100%;
-  max-width: 220px;
+  max-width: 260px; /* Larger */
   margin: 0.6rem;
   box-shadow: 0 0 10px rgba(212, 160, 23, 0.4);
   cursor: pointer;
@@ -167,7 +167,7 @@ button:disabled {
 
 /* How to play section */
 #how-to-play p, #how-to-play ul {
-  font-size: clamp(0.85rem, 2.5vw, 1rem);
+  font-size: clamp(0.95rem, 2.5vw, 1.1rem); /* Larger */
   line-height: 1.6;
   margin: 1rem 0;
   color: #e0d4a8;
@@ -203,24 +203,24 @@ button:disabled {
   }
 
   #canvas {
-      height: calc(100vw * 0.7);
-      max-height: 50vh;
+      height: calc(100vw * 0.9); /* Increased for larger board */
+      max-height: 65vh; /* Adjusted */
       max-width: 100%;
   }
 
   h1, h2 {
-      font-size: clamp(1.2rem, 4.5vw, 1.6rem);
+      font-size: clamp(1.3rem, 4.5vw, 1.7rem);
   }
 
   button {
-      padding: clamp(0.7rem, 2vw, 0.8rem) clamp(1.2rem, 3vw, 1.3rem);
-      font-size: clamp(0.8rem, 3vw, 0.95rem);
-      min-width: clamp(120px, 28vw, 140px);
+      padding: clamp(0.9rem, 2.5vw, 1rem) clamp(1.4rem, 3.5vw, 1.6rem);
+      font-size: clamp(0.9rem, 3vw, 1.05rem);
+      min-width: clamp(150px, 30vw, 170px);
       margin: 0.5rem;
   }
 
   #game-status {
-      font-size: clamp(0.9rem, 3.5vw, 1.15rem);
+      font-size: clamp(1rem, 3.5vw, 1.25rem);
       max-width: 100%;
   }
 
@@ -237,48 +237,48 @@ button:disabled {
   }
 
   #canvas {
-      height: calc(100vw * 0.65);
-      max-height: 55vh;
+      height: calc(100vw * 0.85); /* Adjusted for larger board */
+      max-height: 70vh;
   }
 
   button {
-      padding: clamp(0.7rem, 2vw, 0.8rem) clamp(1.3rem, 3vw, 1.4rem);
-      font-size: clamp(0.85rem, 2.5vw, 1rem);
-      min-width: clamp(130px, 25vw, 150px);
+      padding: clamp(0.9rem, 2vw, 0.75rem);
+      font-size: clamp(0.95rem, 2.5vw, 1.1rem);
+      min-width: clamp(160px, 25vw, 180px);
   }
 
   #game-status {
-      font-size: clamp(0.95rem, 3vw, 1.2rem);
+      font-size: clamp(1.05rem, 3vw, 1.35rem);
   }
 }
 
 /* Desktops (769px–1200px) */
-@media (min-width: 769px) and (max-width: 1200px) {
+@media (min-width: 769px) and (max-width: 1200pxpx) {
   #canvas {
-      height: calc(100vw * 0.6);
-      max-height: 60vh;
-  }
+      height: calc(100vw * 0.8rem);
+      max-height: 75vh; /* Adjusted */  }
+}
 
+/* Buttons */
   button {
-      padding: clamp(0.8rem, 2vw, 0.9rem) clamp(1.4rem, 3vw, 1.5rem);
-      font-size: clamp(0.9rem, 2.5vw, 1.1rem);
-  }
+      padding: clamp(1rem, 2vw, 1rem.1rem);
+      font-size: clamp(1rem, 2.5vw, 1.2rem);
+      min-width: clamp(160px, 160px, 180px);
+    }
 
   #game-status {
-      font-size: clamp(1rem, 2.5vw, 1.3rem);
+      font-size: clamp(1.1rem, 2.5vw, 1.4rem);
   }
-}
+
 
 /* Large desktops (≥1201px) */
 @media (min-width: 1201px) {
   #canvas {
-      height: 60vh;
-      max-height: 600px;
-  }
+      height: 75vh; /* Adjusted for larger board */
+      max-height: 900px; /* Adjusted */  }
 
-  #menu, #game, #settings-menu, #how-to-play {
-      max-width: 800px;
-  }
+  #menu, #game, #settings, s-menu, #how-to-play {
+      max-width: 1400px; /* Adjusted */  }
 }
 
 /* Low-height landscape */
@@ -289,22 +289,22 @@ button:disabled {
   }
 
   #canvas {
-      height: calc(100vw * 0.8);
-      max-height: 40vh;
+      height: calc(100vw * 0.95); /* Adjusted */
+      max-height: 55vh;
   }
 
   h1, h2 {
-      font-size: clamp(1rem, 3.5vw, 1.4rem);
-  }
+      font-size: clamp(1.1rem, 3.5vw, 1.5rem);
+    }
 
   button {
-      padding: clamp(0.6rem, 2vw, 0.7rem) clamp(1rem, 3vw, 1.2rem);
-      font-size: clamp(0.75rem, 2.5vw, 0.9rem);
-      min-width: clamp(110px, 25vw, 130px);
-  }
+      padding: clamp(0.8rem, 2vw, 0.9rem) clamp(1.2rem, 3vw, 1.4rem);
+      font-size: clamp(0.85rem, 2.5vw, 1rem);
+      min-width: clamp(130px, 25vw, 150px);
+    }
 
   #game-status {
-      font-size: clamp(0.8rem, 2.5vw, 1rem);
+      font-size: clamp(0.9rem, 2.5vw, 1.1rem);
   }
 }
 
@@ -326,11 +326,11 @@ button:disabled {
 /* Ultra-wide screens */
 @media (min-aspect-ratio: 21/9) {
   #canvas {
-      max-width: 50vw;
-      height: calc(50vw * 0.6);
+      max-width: 70vw; /* Adjusted for larger board */
+      height: calc(70vw * 0.8); /* Adjusted */
   }
 
   #menu, #game, #settings-menu, #how-to-play {
-      max-width: 40vw;
+      max-width: 60vw; /* Adjusted */
   }
 }
