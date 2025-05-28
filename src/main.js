@@ -92,22 +92,22 @@ function init() {
 
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableZoom = window.innerWidth > 480;
-    controls.minDistance = window.innerWidth <= 480 ? 14 : 18; // Adjusted for larger board
-    controls.maxDistance = window.innerWidth >= 1200 ? 70 : 50; // Adjusted for larger board
+    controls.minDistance = window.innerWidth <= 480 ? 14 : 18;
+    controls.maxDistance = window.innerWidth >= 1200 ? 70 : 50;
     controls.enablePan = false;
-    camera.position.set(20, 20, 20); // Moved further back for larger board
+    camera.position.set(20, 20, 20);
     controls.update();
 
     const ambientLight = new THREE.AmbientLight(0x404040, 0.7);
     scene.add(ambientLight);
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    directionalLight.position.set(10, 20, 10); // Adjusted for larger board
+    directionalLight.position.set(10, 20, 10);
     directionalLight.castShadow = true;
     directionalLight.shadow.mapSize.width = 1024;
     directionalLight.shadow.mapSize.height = 1024;
     scene.add(directionalLight);
-    const pointLight = new THREE.PointLight(0xffffff, 0.5, 20); // Adjusted range
-    pointLight.position.set(0, 8, 0); // Adjusted height
+    const pointLight = new THREE.PointLight(0xffffff, 0.5, 20);
+    pointLight.position.set(0, 8, 0);
     scene.add(pointLight);
 
     const rgbeLoader = new RGBELoader();
@@ -202,8 +202,8 @@ function createBoard() {
         (err) => console.error('Failed to load cell normal map:', err.message)
     );
 
-    const boardScaleFactor = 5.0; // Increased to make board occupy ~50% of canvas
-    const cellScaleFactor = 6.0; // Increased to match larger board
+    const boardScaleFactor = 5.0;
+    const cellScaleFactor = 6.0;
     const boardGeometry = new THREE.BoxGeometry(6 * boardScaleFactor, 0.4, 6 * boardScaleFactor, 32, 32, 32, { bevelEnabled: true, bevelSegments: 4, bevelSize: 0.05 });
     const boardMaterial = new THREE.MeshStandardMaterial({ 
         map: woodTexture, 
@@ -228,11 +228,11 @@ function createBoard() {
         emissiveIntensity: 0.1
     });
 
-    const spacing = 1.8 * boardScaleFactor; // Adjusted for larger board
+    const spacing = 1.8 * boardScaleFactor;
     for (let i = 0; i < 3; i++) {
         for (let j = 0; j < 3; j++) {
             const cell = new THREE.Mesh(cellGeometry, cellMaterial.clone());
-            cell.position.set((i - 1) * spacing, 0.25, (j - 1) * spacing);
+            cell.position.set((i - 1) * spacing, 0.5, (j - 1) * spacing);
             cell.userData = { index: i * 3 + j, baseColor: 0x999999 };
             cell.receiveShadow = true;
             scene.add(cell);
@@ -256,13 +256,13 @@ function createBoard() {
     const points = [];
     for (let i = 0; i <= 3; i++) {
         const x = i * spacing - 1.5 * spacing / 2;
-        points.push(new THREE.Vector3(x, 0.21, -1.5 * spacing / 2));
-        points.push(new THREE.Vector3(x, 0.21, 1.5 * spacing / 2));
+        points.push(new THREE.Vector3(x, 0.45, -1.5 * spacing / 2));
+        points.push(new THREE.Vector3(x, 0.45, 1.5 * spacing / 2));
     }
     for (let j = 0; j <= 3; j++) {
         const z = j * spacing - 1.5 * spacing / 2;
-        points.push(new THREE.Vector3(-1.5 * spacing / 2, 0.21, z));
-        points.push(new THREE.Vector3(1.5 * spacing / 2, 0.21, z));
+        points.push(new THREE.Vector3(-1.5 * spacing / 2, 0.45, z));
+        points.push(new THREE.Vector3(1.5 * spacing / 2, 0.45, z));
     }
     const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
     const gridLines = new THREE.LineSegments(lineGeometry, lineMaterial);
@@ -314,7 +314,7 @@ function createMarker(type, position, index) {
     );
 
     metalNormal = textureLoader.load(
-        'public/assets/Poliigon_StoneQuartzite_8060/2K/Poliigon_StoneQuartzite_8060_Normal.png',
+        '/assets/Poliigon_StoneQuartzite_8060/2K/Poliigon_StoneQuartzite_8060_normal.jpg',
         () => console.log('Quartzite normal map loaded'),
         undefined,
         (err) => {
@@ -323,7 +323,7 @@ function createMarker(type, position, index) {
         }
     );
 
-    const markerScaleFactor = 4.0; // Match cell scale
+    const markerScaleFactor = 4.0;
     let geometry, material, marker;
 
     if (type === 'Player 1') {
@@ -360,7 +360,7 @@ function createMarker(type, position, index) {
     }
 
     marker = new THREE.Mesh(geometry, material);
-    marker.position.set(position.x, 2, position.z);
+    marker.position.set(position.x, 2.5, position.z);
     marker.rotation.x = Math.PI / 2;
     marker.castShadow = true;
     marker.receiveShadow = true;
@@ -383,7 +383,7 @@ function createMarker(type, position, index) {
     markers.push(marker);
     console.log(`${type} marker added to scene:`, marker);
 
-    gsap.to(marker.position, { y: 0.3, duration: 1.2, ease: "bounce.out" });
+    gsap.to(marker.position, { y: 0.55, duration: 1.2, ease: "bounce.out" });
     gsap.to(marker.rotation, { z: Math.PI * 2, duration: 1.2, ease: "power2.out" });
     gsap.to(marker.scale, { x: 1.5, y: 1.5, z: 1.5, duration: 0.6, yoyo: true, repeat: 2, ease: "elastic.out(1, 0.3)" });
 
@@ -394,7 +394,7 @@ function createMarker(type, position, index) {
 
 function createParticleBurst(position, color) {
     const particleCount = 10;
-    const particleScaleFactor = 6.0; // Match cell scale
+    const particleScaleFactor = 4.0;
     const textureLoader = new THREE.TextureLoader();
     const sparkTexture = textureLoader.load(
         '/assets/spark.png',
@@ -413,7 +413,7 @@ function createParticleBurst(position, color) {
         });
         const particle = new THREE.Mesh(geometry, material);
         particle.position.copy(position);
-        particle.position.y = 0.4;
+        particle.position.y = 0.65;
         particle.rotation.z = Math.random() * Math.PI * 2;
         particle.scale.setScalar(0.08 * particleScaleFactor + Math.random() * 0.04);
         scene.add(particle);
