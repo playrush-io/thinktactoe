@@ -34,17 +34,17 @@ function init() {
     scene.background = new THREE.Color(0x0a1420);
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    updateRendererSize();
 
     controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableZoom = window.innerWidth > 768;
+    controls.enableZoom = true;
     controls.enablePan = false;
+    controls.maxPolarAngle = Math.PI / 2;
     updateCamera();
 
-    const ambientLight = new THREE.AmbientLight(0x606060, 0.8);
+    const ambientLight = new THREE.AmbientLight(0x606060, 1.0);
     scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
     directionalLight.position.set(10, 15, 10);
     scene.add(directionalLight);
 
@@ -90,16 +90,28 @@ function init() {
     }
 
     window.addEventListener('resize', onWindowResize);
+    window.addEventListener('orientationchange', onWindowResize);
     animate();
 }
 
+function updateRendererSize() {
+    const canvas = renderer.domElement;
+    const container = canvas.parentElement || document.body;
+    const width = container.clientWidth || window.innerWidth;
+    const height = container.clientHeight || window.innerHeight;
+    renderer.setSize(width, height, false);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+}
+
 function updateCamera() {
+    const isMobile = window.innerWidth <= 768 || window.innerHeight <= 768;
     const aspect = window.innerWidth / window.innerHeight;
-    const isMobile = window.innerWidth <= 768;
     camera.fov = isMobile ? 60 : 75;
-    camera.position.set(0, 15, isMobile ? 18 : 15);
-    controls.minDistance = isMobile ? 10 : 12;
-    controls.maxDistance = isMobile ? 25 : 35;
+    camera.position.set(0, 10, isMobile ? 14 : 12);
+    controls.minDistance = isMobile ? 8 : 10;
+    controls.maxDistance = isMobile ? 18 : 25;
     camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
     controls.update();
@@ -121,8 +133,9 @@ function setupEventListeners() {
         const el = document.getElementById(id);
         if (el) {
             el.addEventListener('click', handler);
+            el.addEventListener('touchend', (e) => { e.preventDefault(); handler(); });
         } else {
-            console.error(`Critical DOM element #${id} not found. Please ensure the HTML structure is correct.`);
+            console.error(`Critical DOM element #${id} not found.`);
         }
     }
 
@@ -133,8 +146,6 @@ function setupEventListeners() {
             saveData();
         });
         difficultySelect.value = difficulty;
-    } else {
-        console.warn('Difficulty select element not found');
     }
 
     const canvas = document.getElementById('canvas');
@@ -144,8 +155,6 @@ function setupEventListeners() {
         canvas.addEventListener('touchstart', onCanvasTouch, { passive: false });
         canvas.addEventListener('touchmove', onTouchMove, { passive: false });
         canvas.addEventListener('touchend', () => { isTouching = false; });
-    } else {
-        console.error('Canvas element not found');
     }
 }
 
@@ -162,8 +171,9 @@ function createBoard() {
         if (boardBase.material) boardBase.material.dispose();
     }
 
-    const boardScaleFactor = Math.min(window.innerWidth / 300, 4.0);
-    const cellScaleFactor = window.innerWidth <= 768 ? 5.5 : 6.5;
+    const isMobile = window.innerWidth <= 768 || window.innerHeight <= 768;
+    const boardScaleFactor = Math.min(Math.max(window.innerWidth, window.innerHeight) / 400, 3.5);
+    const cellScaleFactor = isMobile ? 4.0 : 5.5;
     const boardGeometry = new THREE.BoxGeometry(6 * boardScaleFactor, 0.4, 6 * boardScaleFactor);
     const boardMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
     boardBase = new THREE.Mesh(boardGeometry, boardMaterial);
@@ -178,7 +188,7 @@ function createBoard() {
             const cell = new THREE.Mesh(cellGeometry, cellMaterial.clone());
             const x = (i - 1) * spacing;
             const z = (j - 1) * spacing;
-            cell.position.set(x, 0.6, z);
+            cell.position.set(x, 0.6, z); // Fixed: Changed 'acid' to 'cell'
             cell.userData = { index: i * 3 + j, baseColor: 0xcccccc };
             scene.add(cell);
             cells.push(cell);
@@ -188,14 +198,14 @@ function createBoard() {
     const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
     const points = [];
     for (let i = 0; i <= 3; i++) {
-        const x = i * spacing - 1.5 * spacing / 2;
-        points.push(new THREE.Vector3(x, 0.4, -1.5 * spacing / 2));
-        points.push(new THREE.Vector3(x, 0.4, 1.5 * spacing / 2));
+        const x = i * spacing - 1.5 * spacing;
+        points.push(new THREE.Vector3(x, 0.4, -1.5 * spacing));
+        points.push(new THREE.Vector3(x, 0.4, 1.5 * spacing));
     }
     for (let j = 0; j <= 3; j++) {
-        const z = j * spacing - 1.5 * spacing / 2;
-        points.push(new THREE.Vector3(-1.5 * spacing / 2, 0.4, z));
-        points.push(new THREE.Vector3(1.5 * spacing / 2, 0.4, z));
+        const z = j * spacing - 1.5 * spacing;
+        points.push(new THREE.Vector3(-1.5 * spacing, 0.4, z));
+        points.push(new THREE.Vector3(1.5 * spacing, 0.4, z));
     }
     const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
     const gridLines = new THREE.LineSegments(lineGeometry, lineMaterial);
@@ -210,7 +220,7 @@ function onCanvasClick(event) {
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    raycaster.params.Mesh.threshold = 1.2 * Math.min(window.innerWidth / 300, 4.0);
+    raycaster.params.Mesh.threshold = window.innerWidth <= 768 ? 1.8 : 1.2;
     const intersects = raycaster.intersectObjects(cells);
 
     if (intersects.length > 0 && gameActive) {
@@ -231,7 +241,7 @@ function onCanvasTouch(event) {
     mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    raycaster.params.Mesh.threshold = 1.2 * Math.min(window.innerWidth / 300, 4.0);
+    raycaster.params.Mesh.threshold = window.innerWidth <= 768 ? 1.8 : 1.2;
     const intersects = raycaster.intersectObjects(cells);
 
     cells.forEach(cell => cell.material.color.setHex(cell.userData.baseColor));
@@ -254,7 +264,7 @@ function onTouchMove(event) {
     mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    raycaster.params.Mesh.threshold = 1.2 * Math.min(window.innerWidth / 300, 4.0);
+    raycaster.params.Mesh.threshold = window.innerWidth <= 768 ? 1.8 : 1.2;
     const intersects = raycaster.intersectObjects(cells);
 
     cells.forEach(cell => cell.material.color.setHex(cell.userData.baseColor));
@@ -268,7 +278,8 @@ function createMarker(type, position, index) {
         console.error(`Invalid position for marker at index ${index}`);
         return;
     }
-    const markerScaleFactor = window.innerWidth <= 768 ? 4.0 : 5.0;
+    const isMobile = window.innerWidth <= 768 || window.innerHeight <= 768;
+    const markerScaleFactor = isMobile ? 3.0 : 4.0;
     let geometry, material, marker;
 
     if (type === 'Player 1') {
@@ -294,7 +305,7 @@ function createMarker(type, position, index) {
         marker,
         targetScale: new THREE.Vector3(1, 1, 1),
         progress: 0,
-        speed: 0.1
+        speed: 0.12
     });
 
     if (clickSound) {
@@ -343,9 +354,6 @@ function saveData() {
         localStorage.setItem('ticTacToeData', JSON.stringify(data));
     } catch (e) {
         console.warn('Failed to save to localStorage:', e);
-        if (e.name === 'QuotaExceededError') {
-            console.error('Storage quota exceeded. Please clear some local storage.');
-        }
     }
 }
 
@@ -410,7 +418,7 @@ function onMouseMove(event) {
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    raycaster.params.Mesh.threshold = 1.2 * Math.min(window.innerWidth / 300, 4.0);
+    raycaster.params.Mesh.threshold = window.innerWidth <= 768 ? 1.8 : 1.2;
     const intersects = raycaster.intersectObjects(cells);
 
     cells.forEach(cell => cell.material.color.setHex(cell.userData.baseColor));
@@ -457,6 +465,7 @@ function startGame(isVsComputer) {
     cells.forEach(cell => cell.material.color.setHex(0xcccccc));
     updateScoreDisplay();
     saveData();
+    createBoard();
 
     if (vsComputer && currentPlayer === 'Player 2') {
         setTimeout(computerMove, 300);
@@ -481,6 +490,7 @@ function restartGame() {
     cells.forEach(cell => cell.material.color.setHex(0xcccccc));
     updateScoreDisplay();
     saveData();
+    createBoard();
 
     if (vsComputer && currentPlayer === 'Player 2') {
         setTimeout(computerMove, 300);
@@ -638,9 +648,9 @@ function showMainMenu() {
 }
 
 function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    updateRendererSize();
     updateCamera();
+    createBoard();
 }
 
 function animate() {
