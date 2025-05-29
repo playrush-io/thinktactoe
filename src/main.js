@@ -35,10 +35,10 @@ function init() {
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 
     controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableZoom = window.innerWidth > 480;
+    controls.enableZoom = window.innerWidth > 768;
     controls.enablePan = false;
     updateCamera();
 
@@ -94,11 +94,12 @@ function init() {
 }
 
 function updateCamera() {
-    const isMobile = window.innerWidth <= 480;
-    camera.fov = isMobile ? 65 : 75;
-    camera.position.set(0, 18, isMobile ? 20 : 18);
-    controls.minDistance = isMobile ? 12 : 16;
-    controls.maxDistance = window.innerWidth >= 1200 ? 60 : isMobile ? 30 : 40;
+    const aspect = window.innerWidth / window.innerHeight;
+    const isMobile = window.innerWidth <= 768;
+    camera.fov = isMobile ? 60 : 75;
+    camera.position.set(0, 15, isMobile ? 18 : 15);
+    controls.minDistance = isMobile ? 10 : 12;
+    controls.maxDistance = isMobile ? 25 : 35;
     camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
     controls.update();
@@ -142,6 +143,7 @@ function setupEventListeners() {
         canvas.addEventListener('click', onCanvasClick);
         canvas.addEventListener('touchstart', onCanvasTouch, { passive: false });
         canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+        canvas.addEventListener('touchend', () => { isTouching = false; });
     } else {
         console.error('Canvas element not found');
     }
@@ -160,8 +162,8 @@ function createBoard() {
         if (boardBase.material) boardBase.material.dispose();
     }
 
-    const boardScaleFactor = Math.min(window.innerWidth / 200, 5.0);
-    const cellScaleFactor = window.innerWidth <= 480 ? 7.0 : 7.5;
+    const boardScaleFactor = Math.min(window.innerWidth / 300, 4.0);
+    const cellScaleFactor = window.innerWidth <= 768 ? 5.5 : 6.5;
     const boardGeometry = new THREE.BoxGeometry(6 * boardScaleFactor, 0.4, 6 * boardScaleFactor);
     const boardMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
     boardBase = new THREE.Mesh(boardGeometry, boardMaterial);
@@ -180,8 +182,6 @@ function createBoard() {
             cell.userData = { index: i * 3 + j, baseColor: 0xcccccc };
             scene.add(cell);
             cells.push(cell);
-            const box = new THREE.Box3().setFromObject(cell);
-            console.log(`Cell ${i * 3 + j} position: ${x}, ${z}, Bounding Box:`, box);
         }
     }
 
@@ -210,13 +210,8 @@ function onCanvasClick(event) {
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    raycaster.params.Mesh.threshold = 0.9 * Math.min(window.innerWidth / 200, 5.0);
+    raycaster.params.Mesh.threshold = 1.2 * Math.min(window.innerWidth / 300, 4.0);
     const intersects = raycaster.intersectObjects(cells);
-
-    console.log('Click coordinates:', mouse.x, mouse.y, 'Intersects:', intersects.length);
-    if (intersects.length > 0) {
-        console.log('Hit cell index:', intersects[0].object.userData.index);
-    }
 
     if (intersects.length > 0 && gameActive) {
         const index = intersects[0].object.userData.index;
@@ -227,7 +222,7 @@ function onCanvasClick(event) {
 function onCanvasTouch(event) {
     if (isTouching) return;
     isTouching = true;
-    setTimeout(() => { isTouching = false; }, 150);
+    setTimeout(() => { isTouching = false; }, 200);
     event.preventDefault();
     const touch = event.touches[0];
     const canvas = renderer.domElement;
@@ -236,13 +231,8 @@ function onCanvasTouch(event) {
     mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    raycaster.params.Mesh.threshold = 0.9 * Math.min(window.innerWidth / 200, 5.0);
+    raycaster.params.Mesh.threshold = 1.2 * Math.min(window.innerWidth / 300, 4.0);
     const intersects = raycaster.intersectObjects(cells);
-
-    console.log('Touch coordinates:', mouse.x, mouse.y, 'Intersects:', intersects.length);
-    if (intersects.length > 0) {
-        console.log('Hit cell index:', intersects[0].object.userData.index);
-    }
 
     cells.forEach(cell => cell.material.color.setHex(cell.userData.baseColor));
     if (intersects.length > 0 && gameActive && !board[intersects[0].object.userData.index]) {
@@ -264,7 +254,7 @@ function onTouchMove(event) {
     mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    raycaster.params.Mesh.threshold = 0.9 * Math.min(window.innerWidth / 200, 5.0);
+    raycaster.params.Mesh.threshold = 1.2 * Math.min(window.innerWidth / 300, 4.0);
     const intersects = raycaster.intersectObjects(cells);
 
     cells.forEach(cell => cell.material.color.setHex(cell.userData.baseColor));
@@ -278,8 +268,7 @@ function createMarker(type, position, index) {
         console.error(`Invalid position for marker at index ${index}`);
         return;
     }
-    console.log(`Creating marker for ${type} at index ${index}, position:`, position);
-    const markerScaleFactor = 5.0;
+    const markerScaleFactor = window.innerWidth <= 768 ? 4.0 : 5.0;
     let geometry, material, marker;
 
     if (type === 'Player 1') {
@@ -300,7 +289,6 @@ function createMarker(type, position, index) {
     marker.userData = { index };
     scene.add(marker);
     markers.push(marker);
-    console.log(`${type} marker added at:`, marker.position);
 
     markerAnimations.push({
         marker,
@@ -422,7 +410,7 @@ function onMouseMove(event) {
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    raycaster.params.Mesh.threshold = 0.9 * Math.min(window.innerWidth / 200, 5.0);
+    raycaster.params.Mesh.threshold = 1.2 * Math.min(window.innerWidth / 300, 4.0);
     const intersects = raycaster.intersectObjects(cells);
 
     cells.forEach(cell => cell.material.color.setHex(cell.userData.baseColor));
