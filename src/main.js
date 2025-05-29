@@ -18,54 +18,20 @@ let scores = loadData().scores;
 let winningLine = null;
 let isTouching = false;
 let boardBase = null;
+let markerAnimations = [];
 
 const winningCombinations = [
-    [0,1,2], [3,4,5], [6,7,8], // Rows
-    [0,3,6], [1,4,7], [2,5,8], // Columns
-    [0,4,8], [2,4,6] // Diagonals
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+    [0, 4, 8], [2, 4, 6]
 ];
 
 function init() {
     const savedData = loadData();
     difficulty = savedData.settings.difficulty;
 
-    const requiredElements = ['quickplay', 'vscomputer', 'settings', 'how-to-play-btn', 'back', 'back-to-menu', 'new-game', 'difficulty', 'reset-scores', 'canvas', 'menu', 'game', 'settings-menu', 'how-to-play', 'back-from-how-to-play', 'game-status', 'score-player1', 'score-player2', 'score-ties'];
-    for (const id of requiredElements) {
-        if (!document.getElementById(id)) {
-            console.warn(`DOM element #${id} not found`);
-        }
-    }
-
-    const quickplay = document.getElementById('quickplay');
-    const vscomputer = document.getElementById('vscomputer');
-    const settingsBtn = document.getElementById('settings');
-    const howToPlayBtn = document.getElementById('how-to-play-btn');
-    const back = document.getElementById('back');
-    const backToMenu = document.getElementById('back-to-menu');
-    const backFromHowToPlay = document.getElementById('back-from-how-to-play');
-    const newGame = document.getElementById('new-game');
-    const difficultySelect = document.getElementById('difficulty');
-    const resetScoresBtn = document.getElementById('reset-scores');
-
-    if (quickplay) quickplay.addEventListener('click', () => startGame(false));
-    if (vscomputer) vscomputer.addEventListener('click', () => startGame(true));
-    if (settingsBtn) settingsBtn.addEventListener('click', showSettings);
-    if (howToPlayBtn) howToPlayBtn.addEventListener('click', showHowToPlay);
-    if (back) back.addEventListener('click', showMainMenu);
-    if (backToMenu) backToMenu.addEventListener('click', showMainMenu);
-    if (backFromHowToPlay) backFromHowToPlay.addEventListener('click', showMainMenu);
-    if (newGame) newGame.addEventListener('click', restartGame);
-    if (difficultySelect) {
-        difficultySelect.addEventListener('change', (e) => {
-            difficulty = e.target.value;
-            saveData();
-        });
-        difficultySelect.value = difficulty;
-    }
-    if (resetScoresBtn) resetScoresBtn.addEventListener('click', resetScores);
-
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x1a2634);
+    scene.background = new THREE.Color(0x0a1420);
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -73,32 +39,27 @@ function init() {
 
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableZoom = window.innerWidth > 480;
-    controls.minDistance = window.innerWidth <= 480 ? 14 : 18;
-    controls.maxDistance = window.innerWidth >= 1200 ? 70 : 50;
     controls.enablePan = false;
-    camera.position.set(20, 20, 20);
-    controls.update();
+    updateCamera();
 
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.7);
+    const ambientLight = new THREE.AmbientLight(0x606060, 0.8);
     scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    directionalLight.position.set(10, 20, 10);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(10, 15, 10);
     scene.add(directionalLight);
 
-    clickSound = new Audio('/assets/click.wav');
-    winSound = new Audio('/assets/wins.wav');
-    loseSound = new Audio('/assets/lose.mp3');
-    tieSound = new Audio('/assets/tie.wav');
+    try {
+        clickSound = new Audio('/assets/click.wav');
+        winSound = new Audio('/assets/wins.wav');
+        loseSound = new Audio('/assets/lose.mp3');
+        tieSound = new Audio('/assets/tie.wav');
+    } catch (e) {
+        console.warn('Failed to load audio files:', e);
+    }
 
     createBoard();
+    setupEventListeners();
     updateScoreDisplay();
-
-    const canvas = document.getElementById('canvas');
-    if (canvas) {
-        canvas.addEventListener('mousemove', onMouseMove);
-        canvas.addEventListener('click', onCanvasClick);
-        canvas.addEventListener('touchstart', onCanvasTouch, { passive: false });
-    }
 
     const savedGame = savedData.gameState;
     if (savedGame && isValidGameState(savedGame)) {
@@ -110,73 +71,121 @@ function init() {
         winningLine = savedGame.winningLine;
         const menu = document.getElementById('menu');
         const game = document.getElementById('game');
+        if (menu && game) {
+            menu.classList.add('hidden');
+            game.classList.remove('hidden');
+        }
         const gameStatus = document.getElementById('game-status');
-        if (menu) menu.classList.add('hidden');
-        if (game) game.classList.remove('hidden');
         if (gameStatus) {
             gameStatus.textContent = gameActive ? `${currentPlayer}'s turn` : (winningLine ? `${currentPlayer} wins!` : "It's a tie!");
         }
         updateScoreDisplay();
         board.forEach((player, index) => {
             if (player) {
-                const pos = cells[index].position;
-                createMarker(player, pos, index);
+                const pos = cells[index]?.position;
+                if (pos) createMarker(player, pos, index);
             }
         });
-        if (winningLine) {
-            highlightWinningLine(winningLine);
-        }
+        if (winningLine) highlightWinningLine(winningLine);
     }
 
-    window.addEventListener('resize', () => {
-        onWindowResize();
-        updateCameraDistance();
-    });
+    window.addEventListener('resize', onWindowResize);
     animate();
 }
 
-function updateCameraDistance() {
-    const width = window.innerWidth;
-    controls.minDistance = width <= 480 ? 14 : 18;
-    controls.maxDistance = width >= 1200 ? 70 : 50;
+function updateCamera() {
+    const isMobile = window.innerWidth <= 480;
+    camera.fov = isMobile ? 65 : 75;
+    camera.position.set(0, 18, isMobile ? 20 : 18);
+    controls.minDistance = isMobile ? 12 : 16;
+    controls.maxDistance = window.innerWidth >= 1200 ? 60 : isMobile ? 30 : 40;
+    camera.lookAt(0, 0, 0);
+    camera.updateProjectionMatrix();
     controls.update();
 }
 
-function createBoard() {
-    cells.forEach(cell => scene.remove(cell));
-    cells = [];
-    if (boardBase) scene.remove(boardBase);
+function setupEventListeners() {
+    const elements = {
+        quickplay: () => startGame(false),
+        vscomputer: () => startGame(true),
+        settings: showSettings,
+        'how-to-play-btn': showHowToPlay,
+        back: showMainMenu,
+        'back-to-menu': showMainMenu,
+        'back-from-how-to-play': showMainMenu,
+        'new-game': restartGame,
+        'reset-scores': resetScores
+    };
+    for (const [id, handler] of Object.entries(elements)) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('click', handler);
+        } else {
+            console.error(`Critical DOM element #${id} not found. Please ensure the HTML structure is correct.`);
+        }
+    }
 
-    const boardScaleFactor = 5.0;
-    const cellScaleFactor = 7.0;
-    const boardGeometry = new THREE.BoxGeometry(6 * boardScaleFactor, 0.4, 6 * boardScaleFactor);
-    const boardMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x8b4513,
-        roughness: 0.5,
-        metalness: 0.05
+    const difficultySelect = document.getElementById('difficulty');
+    if (difficultySelect) {
+        difficultySelect.addEventListener('change', (e) => {
+            difficulty = e.target.value;
+            saveData();
+        });
+        difficultySelect.value = difficulty;
+    } else {
+        console.warn('Difficulty select element not found');
+    }
+
+    const canvas = document.getElementById('canvas');
+    if (canvas) {
+        canvas.addEventListener('mousemove', onMouseMove);
+        canvas.addEventListener('click', onCanvasClick);
+        canvas.addEventListener('touchstart', onCanvasTouch, { passive: false });
+        canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+    } else {
+        console.error('Canvas element not found');
+    }
+}
+
+function createBoard() {
+    cells.forEach(cell => {
+        scene.remove(cell);
+        if (cell.geometry) cell.geometry.dispose();
+        if (cell.material) cell.material.dispose();
     });
+    cells = [];
+    if (boardBase) {
+        scene.remove(boardBase);
+        if (boardBase.geometry) boardBase.geometry.dispose();
+        if (boardBase.material) boardBase.material.dispose();
+    }
+
+    const boardScaleFactor = Math.min(window.innerWidth / 200, 5.0);
+    const cellScaleFactor = window.innerWidth <= 480 ? 7.0 : 7.5;
+    const boardGeometry = new THREE.BoxGeometry(6 * boardScaleFactor, 0.4, 6 * boardScaleFactor);
+    const boardMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
     boardBase = new THREE.Mesh(boardGeometry, boardMaterial);
     scene.add(boardBase);
 
     const cellGeometry = new THREE.BoxGeometry(0.9 * cellScaleFactor, 0.1, 0.9 * cellScaleFactor);
-    const cellMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0xcccccc,
-        roughness: 0.5,
-        metalness: 0.1
-    });
+    const cellMaterial = new THREE.MeshBasicMaterial({ color: 0xcccccc });
 
     const spacing = 1.8 * boardScaleFactor;
     for (let i = 0; i < 3; i++) {
         for (let j = 0; j < 3; j++) {
             const cell = new THREE.Mesh(cellGeometry, cellMaterial.clone());
-            cell.position.set((i - 1) * spacing, 0.6, (j - 1) * spacing);
+            const x = (i - 1) * spacing;
+            const z = (j - 1) * spacing;
+            cell.position.set(x, 0.6, z);
             cell.userData = { index: i * 3 + j, baseColor: 0xcccccc };
             scene.add(cell);
             cells.push(cell);
+            const box = new THREE.Box3().setFromObject(cell);
+            console.log(`Cell ${i * 3 + j} position: ${x}, ${z}, Bounding Box:`, box);
         }
     }
 
-    const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+    const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
     const points = [];
     for (let i = 0; i <= 3; i++) {
         const x = i * spacing - 1.5 * spacing / 2;
@@ -195,11 +204,19 @@ function createBoard() {
 
 function onCanvasClick(event) {
     event.preventDefault();
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    const canvas = renderer.domElement;
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
+    raycaster.params.Mesh.threshold = 0.9 * Math.min(window.innerWidth / 200, 5.0);
     const intersects = raycaster.intersectObjects(cells);
+
+    console.log('Click coordinates:', mouse.x, mouse.y, 'Intersects:', intersects.length);
+    if (intersects.length > 0) {
+        console.log('Hit cell index:', intersects[0].object.userData.index);
+    }
 
     if (intersects.length > 0 && gameActive) {
         const index = intersects[0].object.userData.index;
@@ -210,14 +227,27 @@ function onCanvasClick(event) {
 function onCanvasTouch(event) {
     if (isTouching) return;
     isTouching = true;
-    setTimeout(() => { isTouching = false; }, 300);
+    setTimeout(() => { isTouching = false; }, 150);
     event.preventDefault();
     const touch = event.touches[0];
-    mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+    const canvas = renderer.domElement;
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
+    raycaster.params.Mesh.threshold = 0.9 * Math.min(window.innerWidth / 200, 5.0);
     const intersects = raycaster.intersectObjects(cells);
+
+    console.log('Touch coordinates:', mouse.x, mouse.y, 'Intersects:', intersects.length);
+    if (intersects.length > 0) {
+        console.log('Hit cell index:', intersects[0].object.userData.index);
+    }
+
+    cells.forEach(cell => cell.material.color.setHex(cell.userData.baseColor));
+    if (intersects.length > 0 && gameActive && !board[intersects[0].object.userData.index]) {
+        intersects[0].object.material.color.setHex(0x00ff88);
+    }
 
     if (intersects.length > 0 && gameActive) {
         const index = intersects[0].object.userData.index;
@@ -225,7 +255,29 @@ function onCanvasTouch(event) {
     }
 }
 
+function onTouchMove(event) {
+    event.preventDefault();
+    const touch = event.touches[0];
+    const canvas = renderer.domElement;
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    raycaster.params.Mesh.threshold = 0.9 * Math.min(window.innerWidth / 200, 5.0);
+    const intersects = raycaster.intersectObjects(cells);
+
+    cells.forEach(cell => cell.material.color.setHex(cell.userData.baseColor));
+    if (intersects.length > 0 && gameActive && !board[intersects[0].object.userData.index]) {
+        intersects[0].object.material.color.setHex(0x00ff88);
+    }
+}
+
 function createMarker(type, position, index) {
+    if (!position || typeof position.x !== 'number' || typeof position.z !== 'number') {
+        console.error(`Invalid position for marker at index ${index}`);
+        return;
+    }
     console.log(`Creating marker for ${type} at index ${index}, position:`, position);
     const markerScaleFactor = 5.0;
     let geometry, material, marker;
@@ -235,26 +287,41 @@ function createMarker(type, position, index) {
         const box2 = new THREE.BoxGeometry(0.8 * markerScaleFactor, 0.3, 0.3);
         box2.rotateZ(Math.PI / 2);
         geometry = BufferGeometryUtils.mergeGeometries([box1, box2]);
-        material = new THREE.MeshBasicMaterial({
-            color: 0x000000
-        });
+        material = new THREE.MeshBasicMaterial({ color: 0xff3333 });
     } else {
         geometry = new THREE.RingGeometry(0.25 * markerScaleFactor, 0.45 * markerScaleFactor, 32);
-        material = new THREE.MeshBasicMaterial({
-            color: 0x5555ff,
-            side: THREE.DoubleSide
-        });
+        material = new THREE.MeshBasicMaterial({ color: 0x3333ff, side: THREE.DoubleSide });
     }
 
     marker = new THREE.Mesh(geometry, material);
     marker.position.set(position.x, 0.7, position.z);
     marker.rotation.x = Math.PI / 2;
+    marker.scale.set(0.1, 0.1, 0.1);
     marker.userData = { index };
     scene.add(marker);
     markers.push(marker);
-    console.log(`${type} marker added to scene at position:`, marker.position, 'with scale:', marker.scale);
+    console.log(`${type} marker added at:`, marker.position);
 
-    if (clickSound) clickSound.play().catch(e => console.warn('Click sound play error:', e));
+    markerAnimations.push({
+        marker,
+        targetScale: new THREE.Vector3(1, 1, 1),
+        progress: 0,
+        speed: 0.1
+    });
+
+    if (clickSound) {
+        clickSound.play().catch(e => console.warn('Click sound playback failed:', e));
+    }
+}
+
+function animateMarkers() {
+    markerAnimations = markerAnimations.filter(anim => anim.progress < 1);
+    markerAnimations.forEach(anim => {
+        anim.progress += anim.speed;
+        if (anim.progress > 1) anim.progress = 1;
+        const scale = anim.progress;
+        anim.marker.scale.lerp(anim.targetScale, scale);
+    });
 }
 
 function loadData() {
@@ -267,16 +334,13 @@ function loadData() {
     if (!saved) return defaultData;
     try {
         const data = JSON.parse(saved);
-        if (!data.scores || !data.settings) {
-            console.warn('Invalid localStorage data structure');
-            return defaultData;
-        }
+        if (!data.scores || !data.settings) return defaultData;
         if (!['easy', 'medium', 'hard'].includes(data.settings.difficulty)) {
             data.settings.difficulty = 'medium';
         }
         return data;
     } catch (e) {
-        console.warn('Failed to parse localStorage data:', e.message);
+        console.warn('Failed to parse localStorage:', e);
         return defaultData;
     }
 }
@@ -290,11 +354,9 @@ function saveData() {
     try {
         localStorage.setItem('ticTacToeData', JSON.stringify(data));
     } catch (e) {
-        console.warn('Failed to save to localStorage:', e.message);
+        console.warn('Failed to save to localStorage:', e);
         if (e.name === 'QuotaExceededError') {
-            console.warn('Storage quota exceeded, clearing localStorage');
-            localStorage.removeItem('ticTacToeData');
-            localStorage.setItem('ticTacToeData', JSON.stringify(data));
+            console.error('Storage quota exceeded. Please clear some local storage.');
         }
     }
 }
@@ -331,57 +393,51 @@ function updateScore(winner) {
         const scoreElement = document.getElementById(`score-${winner.toLowerCase().replace(' ', '')}`);
         if (scoreElement) scoreElement.textContent = `${winner}: ${scores[winner]}`;
         if (winner === 'Player 1' && winSound) {
-            winSound.pause();
-            winSound.currentTime = 0;
-            winSound.play().catch(e => console.warn('Win sound play error:', e));
+            winSound.play().catch(e => console.warn('Win sound playback failed:', e));
         } else if (winner === 'Player 2' && loseSound) {
-            loseSound.pause();
-            loseSound.currentTime = 0;
-            loseSound.play().catch(e => console.warn('Lose sound play error:', e));
+            loseSound.play().catch(e => console.warn('Lose sound playback failed:', e));
         }
     } else {
         scores['Ties']++;
         saveData();
         const scoreTies = document.getElementById('score-ties');
         if (scoreTies) scoreTies.textContent = `Ties: ${scores['Ties']}`;
-        if (tieSound) {
-            tieSound.pause();
-            tieSound.currentTime = 0;
-            tieSound.play().catch(e => console.warn('Tie sound play error:', e));
-        }
+        if (tieSound) tieSound.play().catch(e => console.warn('Tie sound playback failed:', e));
     }
-    if (!gameActive) saveData();
 }
 
 function highlightWinningLine(combo) {
     combo.forEach(index => {
         const cell = cells[index];
-        cell.material.color.setHex(currentPlayer === 'Player 1' ? 0x000000 : 0x5555ff);
+        if (cell) {
+            cell.material.color.setHex(currentPlayer === 'Player 1' ? 0xff3333 : 0x3333ff);
+        }
     });
 }
 
 function onMouseMove(event) {
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    const canvas = renderer.domElement;
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
+    raycaster.params.Mesh.threshold = 0.9 * Math.min(window.innerWidth / 200, 5.0);
     const intersects = raycaster.intersectObjects(cells);
 
-    cells.forEach(cell => {
-        cell.material.color.setHex(cell.userData.baseColor);
-    });
-
+    cells.forEach(cell => cell.material.color.setHex(cell.userData.baseColor));
     if (intersects.length > 0 && gameActive && !board[intersects[0].object.userData.index]) {
-        const cell = intersects[0].object;
-        cell.material.color.setHex(0x00ff00);
+        intersects[0].object.material.color.setHex(0x00ff88);
     }
 }
 
 function showHowToPlay() {
     const menu = document.getElementById('menu');
     const howToPlay = document.getElementById('how-to-play');
-    if (menu) menu.classList.add('hidden');
-    if (howToPlay) howToPlay.classList.remove('hidden');
+    if (menu && howToPlay) {
+        menu.classList.add('hidden');
+        howToPlay.classList.remove('hidden');
+    }
 }
 
 function startGame(isVsComputer) {
@@ -394,23 +450,28 @@ function startGame(isVsComputer) {
     const settingsMenu = document.getElementById('settings-menu');
     const howToPlay = document.getElementById('how-to-play');
     const game = document.getElementById('game');
+    if (menu && settingsMenu && howToPlay && game) {
+        menu.classList.add('hidden');
+        settingsMenu.classList.add('hidden');
+        howToPlay.classList.add('hidden');
+        game.classList.remove('hidden');
+    }
     const gameStatus = document.getElementById('game-status');
-    if (menu) menu.classList.add('hidden');
-    if (settingsMenu) settingsMenu.classList.add('hidden');
-    if (howToPlay) howToPlay.classList.add('hidden');
-    if (game) game.classList.remove('hidden');
     if (gameStatus) gameStatus.textContent = `${currentPlayer}'s turn`;
 
-    markers.forEach(marker => scene.remove(marker));
-    markers = [];
-    cells.forEach(cell => {
-        cell.material.color.setHex(0xcccccc);
+    markers.forEach(marker => {
+        scene.remove(marker);
+        if (marker.geometry) marker.geometry.dispose();
+        if (marker.material) marker.material.dispose();
     });
+    markers = [];
+    markerAnimations = [];
+    cells.forEach(cell => cell.material.color.setHex(0xcccccc));
     updateScoreDisplay();
     saveData();
 
     if (vsComputer && currentPlayer === 'Player 2') {
-        setTimeout(computerMove, 1000);
+        setTimeout(computerMove, 300);
     }
 }
 
@@ -422,63 +483,62 @@ function restartGame() {
     const gameStatus = document.getElementById('game-status');
     if (gameStatus) gameStatus.textContent = `${currentPlayer}'s turn`;
 
-    markers.forEach(marker => scene.remove(marker));
-    markers = [];
-    cells.forEach(cell => {
-        cell.material.color.setHex(0xcccccc);
+    markers.forEach(marker => {
+        scene.remove(marker);
+        if (marker.geometry) marker.geometry.dispose();
+        if (marker.material) marker.material.dispose();
     });
+    markers = [];
+    markerAnimations = [];
+    cells.forEach(cell => cell.material.color.setHex(0xcccccc));
     updateScoreDisplay();
     saveData();
 
     if (vsComputer && currentPlayer === 'Player 2') {
-        setTimeout(computerMove, 1000);
+        setTimeout(computerMove, 300);
     }
 }
 
 function makeMove(index) {
-    console.log(`Making move at index ${index} for ${currentPlayer}`);
-    if (board[index] || !gameActive) {
-        console.warn(`Move blocked: index ${index}, gameActive: ${gameActive}`);
-        return;
-    }
+    if (board[index] || !gameActive) return;
 
     board[index] = currentPlayer;
-    const pos = cells[index].position;
-    createMarker(currentPlayer, pos, index);
-    saveData();
+    const pos = cells[index]?.position;
+    if (pos) {
+        createMarker(currentPlayer, pos, index);
+        saveData();
 
-    const winCombo = checkWin();
-    if (winCombo) {
+        const winCombo = checkWin();
+        if (winCombo) {
+            const gameStatus = document.getElementById('game-status');
+            if (gameStatus) gameStatus.textContent = `${currentPlayer} wins!`;
+            gameActive = false;
+            winningLine = winCombo;
+            highlightWinningLine(winCombo);
+            updateScore(currentPlayer);
+            return;
+        }
+
+        if (board.every(cell => cell)) {
+            const gameStatus = document.getElementById('game-status');
+            if (gameStatus) gameStatus.textContent = "It's a tie!";
+            gameActive = false;
+            updateScore(null);
+            return;
+        }
+
+        currentPlayer = currentPlayer === 'Player 1' ? 'Player 2' : 'Player 1';
         const gameStatus = document.getElementById('game-status');
-        if (gameStatus) gameStatus.textContent = `${currentPlayer} wins!`;
-        gameActive = false;
-        winningLine = winCombo;
-        highlightWinningLine(winCombo);
-        updateScore(currentPlayer);
-        return;
-    }
+        if (gameStatus) gameStatus.textContent = `${currentPlayer}'s turn`;
+        saveData();
 
-    if (board.every(cell => cell)) {
-        const gameStatus = document.getElementById('game-status');
-        if (gameStatus) gameStatus.textContent = "It's a tie!";
-        gameActive = false;
-        updateScore(null);
-        return;
-    }
-
-    currentPlayer = currentPlayer === 'Player 1' ? 'Player 2' : 'Player 1';
-    const gameStatus = document.getElementById('game-status');
-    if (gameStatus) gameStatus.textContent = `${currentPlayer}'s turn`;
-    saveData();
-
-    if (vsComputer && currentPlayer === 'Player 2' && gameActive) {
-        console.log('Scheduling computer move');
-        setTimeout(computerMove, 1000);
+        if (vsComputer && currentPlayer === 'Player 2' && gameActive) {
+            setTimeout(computerMove, 300);
+        }
     }
 }
 
 function computerMove() {
-    console.log('Computer move triggered');
     let move;
     if (difficulty === 'easy') {
         move = getRandomMove();
@@ -488,12 +548,7 @@ function computerMove() {
         move = getBestMove(1);
     }
 
-    if (move !== null) {
-        console.log(`Computer chose move at index ${move}`);
-        makeMove(move);
-    } else {
-        console.warn('No valid move found for computer');
-    }
+    if (move !== null) makeMove(move);
 }
 
 function getRandomMove() {
@@ -520,11 +575,11 @@ function getBestMove(chance) {
 
     if (difficulty === 'hard' || (difficulty === 'medium' && Math.random() < chance)) {
         const forks = [
-            { index: 0, combos: [[0,1,2], [0,3,6], [0,4,8]] },
-            { index: 2, combos: [[0,1,2], [2,5,8], [2,4,6]] },
-            { index: 6, combos: [[6,7,8], [0,3,6], [0,4,8]] },
-            { index: 8, combos: [[6,7,8], [2,5,8], [0,4,8]] },
-            { index: 4, combos: [[1,4,7], [3,4,5], [0,4,8], [2,4,6]] }
+            { index: 0, combos: [[0, 1, 2], [0, 3, 6], [0, 4, 8]] },
+            { index: 2, combos: [[0, 1, 2], [2, 5, 8], [2, 4, 6]] },
+            { index: 6, combos: [[6, 7, 8], [0, 3, 6], [0, 4, 8]] },
+            { index: 8, combos: [[6, 7, 8], [2, 5, 8], [0, 4, 8]] },
+            { index: 4, combos: [[1, 4, 7], [3, 4, 5], [0, 4, 8], [2, 4, 6]] }
         ];
         for (let fork of forks) {
             if (!board[fork.index]) {
@@ -574,8 +629,10 @@ function getGameState() {
 function showSettings() {
     const menu = document.getElementById('menu');
     const settingsMenu = document.getElementById('settings-menu');
-    if (menu) menu.classList.add('hidden');
-    if (settingsMenu) settingsMenu.classList.remove('hidden');
+    if (menu && settingsMenu) {
+        menu.classList.add('hidden');
+        settingsMenu.classList.remove('hidden');
+    }
 }
 
 function showMainMenu() {
@@ -583,22 +640,25 @@ function showMainMenu() {
     const settingsMenu = document.getElementById('settings-menu');
     const howToPlay = document.getElementById('how-to-play');
     const menu = document.getElementById('menu');
-    if (game) game.classList.add('hidden');
-    if (settingsMenu) settingsMenu.classList.add('hidden');
-    if (howToPlay) howToPlay.classList.add('hidden');
-    if (menu) menu.classList.remove('hidden');
+    if (game && settingsMenu && howToPlay && menu) {
+        game.classList.add('hidden');
+        settingsMenu.classList.add('hidden');
+        howToPlay.classList.add('hidden');
+        menu.classList.remove('hidden');
+    }
     saveData();
 }
 
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    updateCamera();
 }
 
 function animate() {
     requestAnimationFrame(animate);
     controls.update();
+    animateMarkers();
     renderer.render(scene, camera);
 }
 

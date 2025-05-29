@@ -1,15 +1,15 @@
-/* Reset and base styles */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Cinzel Decorative', 'Cinzel', 'Georgia', serif;
+  font-family: 'Orbitron', sans-serif;
 }
 
-/* Body with dark leather background */
 body {
-  background: linear-gradient(135deg, #2c1b0a 0%, #1a1208 100%);
-  color: #e0d4a8;
+  background: #0a1420;
+  color: hsl(54, 80%, 60%);
   min-height: 100vh;
   width: 100vw;
   display: flex;
@@ -20,317 +20,236 @@ body {
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
-/* Dashboard/control sections */
 #menu, #game, #settings-menu, #how-to-play {
-  position: relative;
   z-index: 10;
   width: 100%;
-  max-width: 1200px; /* Increased for larger board */
-  min-height: 20vh;
-  padding: 1.5rem;
-  background: linear-gradient(180deg, rgba(30, 20, 10, 0.95), rgba(10, 5, 0, 0.85));
-  border: 2px solid #d4a017;
-  box-shadow: 0 0 20px rgba(212, 160, 23, 0.4);
+  max-width: 900px;
+  padding: 1rem;
+  background: rgba(10, 20, 32, 0.9);
+  border: 2px solid hsl(54, 80%, 60%);
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   margin: 0.5rem 0;
+  transition: opacity 0.2s ease;
 }
 
-/* Canvas */
 #canvas {
   width: 100%;
-  max-width: 1200px; /* Increased to support larger board */
-  height: calc(100vw * 0.8); /* Increased height ratio */
-  max-height: 80vh; /* Increased max-height */
-  min-height: 350px; /* Increased min-height */
+  max-width: 900px;
+  aspect-ratio: 4 / 3;
+  max-height: 65vh;
+  min-height: 280px;
   z-index: 5;
   margin: 0.5rem 0;
   touch-action: pinch-zoom;
+  transition: transform 0.1s ease;
 }
 
-/* Hidden elements */
+#canvas:active {
+  transform: scale(1.02);
+}
+
 .hidden {
   display: none !important;
 }
 
-/* Headings */
 h1, h2 {
-  font-size: clamp(1.5rem, 4vw, 2rem); /* Slightly larger */
-  color: #d4a017;
-  text-shadow: 0 0 10px rgba(212, 160, 23, 0.8);
-  margin-bottom: 1.5rem;
-  animation: parchment-glow 2.5s infinite alternate ease-in-out;
+  font-size: clamp(1.4rem, 3.5vw, 1.8rem);
+  color: hsl(54, 80%, 60%);
+  text-shadow: 0 0 8px hsl(54, 80%, 60%);
+  margin-bottom: 1rem;
 }
 
-/* Parchment glow animation */
-@keyframes parchment-glow {
-  0% { text-shadow: 0 0 10px rgba(212, 160, 23, 0.8); }
-  50% { text-shadow: 0 0 15px rgba(212, 160, 23, 1); }
-  100% { text-shadow: 0 0 8px rgba(212, 160, 23, 0.6); }
-}
-
-/* Buttons */
 button {
-  background: linear-gradient(45deg, #e0d4a8, #c7b07b);
-  color: #2c1b0a;
-  border: 2px solid #d4a017;
+  background: linear-gradient(45deg, hsl(54, 80%, 60%), hsl(54, 80%, 40%));
+  color: #0a1420;
+  border: 2px solid hsl(54, 80%, 60%);
   border-radius: 8px;
-  padding: clamp(1rem, 2.5vw, 1.1rem) clamp(1.5rem, 3.5vw, 1.7rem); /* Larger */
-  margin: 0.6rem;
-  font-size: clamp(1rem, 2.5vw, 1.2rem); /* Larger */
+  padding: clamp(0.8rem, 2vw, 1rem) clamp(1.2rem, 3vw, 1.5rem);
+  margin: 0.5rem;
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.3s, box-shadow 0.3s;
-  box-shadow: 0 0 12px rgba(212, 160, 23, 0.6);
-  min-width: clamp(160px, 32vw, 180px); /* Larger */
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 0 10px hsl(54, 80%, 60%);
+  min-width: clamp(140px, 30vw, 160px);
   z-index: 15;
-  animation: parchment-glow 2.5s infinite alternate ease-in-out;
 }
 
-button:hover:not(:disabled) {
-  background: linear-gradient(45deg, #f0e4b8, #d7c08b);
-  transform: scale(1.08);
-  box-shadow: 0 0 20px rgba(212, 160, 23, 0.9);
+button:hover:not(:disabled), button:active:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px hsl(54, 80%, 60%);
 }
 
 button:disabled {
-  background: #666;
-  border-color: #666;
-  color: #999;
+  background: #444;
+  border-color: #444;
+  color: #777;
   box-shadow: none;
   cursor: not-allowed;
-  opacity: 0.6;
-  animation: none;
 }
 
-/* Game status */
 #game-status {
-  font-size: clamp(1.1rem, 3.5vw, 1.4rem); /* Larger */
-  padding: 0.8rem;
-  background: rgba(30, 20, 10, 0.8);
-  border: 2px solid #d4a017;
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  padding: 0.6rem;
+  background: rgba(10, 20, 32, 0.9);
+  border: 2px solid hsl(54, 80%, 60%);
   border-radius: 8px;
-  color: #e0d4a8;
-  text-shadow: 0 0 8px rgba(212, 160, 23, 0.7);
-  margin: 0.6rem;
+  color: hsl(54, 80%, 60%);
+  text-shadow: 0 0 6px hsl(54, 80%, 60%);
+  margin: 0.5rem;
   width: 100%;
-  max-width: 260px; /* Larger */
-  animation: parchment-glow 2.5s infinite alternate ease-in-out;
+  max-width: 220px;
 }
 
-/* Score display */
 #score-display {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
-  margin: 0.6rem;
+  gap: 0.5rem;
+  margin: 0.5rem;
   width: 100%;
-  max-width: 260px; /* Larger */
+  max-width: 220px;
 }
 
 #score-player1, #score-player2, #score-ties {
-  font-size: clamp(0.95rem, 2.5vw, 1.1rem); /* Larger */
-  padding: 0.7rem;
-  background: rgba(30, 20, 10, 0.8);
-  border: 2px solid #d4a017;
+  font-size: clamp(0.85rem, 2vw, 1rem);
+  padding: 0.5rem;
+  background: rgba(10, 20, 32, 0.9);
+  border: 2px solid hsl(54, 80%, 60%);
   border-radius: 8px;
-  box-shadow: 0 0 10px rgba(212, 160, 23, 0.5);
-  color: #e0d4a8;
+  color: hsl(54, 80%, 60%);
 }
 
-/* Game controls */
 #game-controls {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
-  margin: 0.6rem;
+  gap: 0.5rem;
+  margin: 0.5rem;
   width: 100%;
-  max-width: 260px; /* Larger */
+  max-width: 220px;
 }
 
-/* Settings menu */
 #settings-menu select {
-  background: linear-gradient(#e0d4a8, #c7b07b);
-  color: #2c1b0a;
-  border: 2px solid #d4a017;
+  background: linear-gradient(hsl(54, 80%, 60%), hsl(54, 80%, 40%));
+  color: #0a1420;
+  border: 2px solid hsl(54, 80%, 60%);
   border-radius: 8px;
-  padding: 0.8rem;
-  font-size: clamp(0.95rem, 2.5vw, 1.1rem); /* Larger */
+  padding: 0.6rem;
+  font-size: clamp(0.85rem, 2vw, 1rem);
   width: 100%;
-  max-width: 260px; /* Larger */
-  margin: 0.6rem;
-  box-shadow: 0 0 10px rgba(212, 160, 23, 0.4);
+  max-width: 220px;
+  margin: 0.5rem;
+  box-shadow: 0 0 8px hsl(54, 80%, 60%);
   cursor: pointer;
 }
 
-/* How to play section */
 #how-to-play p, #how-to-play ul {
-  font-size: clamp(0.95rem, 2.5vw, 1.1rem); /* Larger */
-  line-height: 1.6;
-  margin: 1rem 0;
-  color: #e0d4a8;
+  font-size: clamp(0.85rem, 2vw, 1rem);
+  line-height: 1.5;
+  margin: 0.8rem 0;
+  color: hsl(54, 80%, 60%);
   max-width: 90%;
 }
 
 #how-to-play ul {
   list-style-type: none;
   text-align: left;
-  padding-left: 1.2rem;
+  padding-left: 1rem;
 }
 
 #how-to-play li {
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.5rem;
+  padding-left: 1.2rem;
   position: relative;
-  padding-left: 1.5rem;
 }
 
 #how-to-play li::before {
-  content: '✠';
+  content: '▶';
   position: absolute;
   left: 0;
-  color: #d4a017;
-  font-size: 1rem;
+  color: hsl(54, 80%, 60%);
+  font-size: 0.9rem;
 }
 
-/* Mobile devices (≤480px) */
 @media (max-width: 480px) {
   #menu, #game, #settings-menu, #how-to-play {
-      padding: 1rem;
-      min-height: 15vh;
-      max-width: 100%;
+    padding: 0.8rem;
+    max-width: 100%;
   }
 
   #canvas {
-      height: calc(100vw * 0.9); /* Increased for larger board */
-      max-height: 65vh; /* Adjusted */
-      max-width: 100%;
+    max-height: min(60vh, 90vw);
   }
 
   h1, h2 {
-      font-size: clamp(1.3rem, 4.5vw, 1.7rem);
+    font-size: clamp(1.2rem, 4vw, 1.5rem);
   }
 
   button {
-      padding: clamp(0.9rem, 2.5vw, 1rem) clamp(1.4rem, 3.5vw, 1.6rem);
-      font-size: clamp(0.9rem, 3vw, 1.05rem);
-      min-width: clamp(150px, 30vw, 170px);
-      margin: 0.5rem;
+    padding: clamp(0.7rem, 2vw, 0.9rem) clamp(1rem, 3vw, 1.3rem);
+    font-size: clamp(0.8rem, 2.5vw, 1rem);
+    min-width: clamp(130px, 28vw, 150px);
   }
 
-  #game-status {
-      font-size: clamp(1rem, 3.5vw, 1.25rem);
-      max-width: 100%;
-  }
-
-  #score-display, #game-controls, #settings-menu select {
-      max-width: 100%;
+  #game-status, #score-display, #game-controls, #settings-menu select {
+    max-width: 100%;
   }
 }
 
-/* Tablets (481px–768px) */
 @media (min-width: 481px) and (max-width: 768px) {
-  #menu, #game, #settings-menu, #how-to-play {
-      padding: 1.3rem;
-      min-height: 20vh;
-  }
-
   #canvas {
-      height: calc(100vw * 0.85); /* Adjusted for larger board */
-      max-height: 70vh;
+    max-height: min(62vh, 85vw);
   }
 
   button {
-      padding: clamp(0.9rem, 2vw, 0.75rem);
-      font-size: clamp(0.95rem, 2.5vw, 1.1rem);
-      min-width: clamp(160px, 25vw, 180px);
-  }
-
-  #game-status {
-      font-size: clamp(1.05rem, 3vw, 1.35rem);
+    min-width: clamp(140px, 25vw, 160px);
   }
 }
 
-/* Desktops (769px–1200px) */
-@media (min-width: 769px) and (max-width: 1200pxpx) {
+@media (min-width: 769px) and (max-width: 900px) {
   #canvas {
-      height: calc(100vw * 0.8rem);
-      max-height: 75vh; /* Adjusted */  }
-}
-
-/* Buttons */
-  button {
-      padding: clamp(1rem, 2vw, 1rem.1rem);
-      font-size: clamp(1rem, 2.5vw, 1.2rem);
-      min-width: clamp(160px, 160px, 180px);
-    }
-
-  #game-status {
-      font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+    max-height: min(63vh, 80vw);
   }
-
-
-/* Large desktops (≥1201px) */
-@media (min-width: 1201px) {
-  #canvas {
-      height: 75vh; /* Adjusted for larger board */
-      max-height: 900px; /* Adjusted */  }
-
-  #menu, #game, #settings, s-menu, #how-to-play {
-      max-width: 1400px; /* Adjusted */  }
 }
 
-/* Low-height landscape */
+@media (min-width: 901px) {
+  #canvas {
+    max-height: 60vh;
+  }
+}
+
 @media (orientation: landscape) and (max-height: 480px) {
-  #menu, #game, #settings-menu, #how-to-play {
-      min-height: 15vh;
-      padding: 0.8rem;
-  }
-
   #canvas {
-      height: calc(100vw * 0.95); /* Adjusted */
-      max-height: 55vh;
+    max-height: min(48vh, 85vw);
   }
-
-  h1, h2 {
-      font-size: clamp(1.1rem, 3.5vw, 1.5rem);
-    }
 
   button {
-      padding: clamp(0.8rem, 2vw, 0.9rem) clamp(1.2rem, 3vw, 1.4rem);
-      font-size: clamp(0.85rem, 2.5vw, 1rem);
-      min-width: clamp(130px, 25vw, 150px);
-    }
-
-  #game-status {
-      font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+    padding: clamp(0.6rem, 1.5vw, 0.8rem) clamp(1rem, 2.5vw, 1.2rem);
+    font-size: clamp(0.8rem, 2vw, 0.9rem);
+    min-width: clamp(120px, 20vw, 140px);
   }
 }
 
-/* High-resolution displays */
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
   button, #settings-menu select {
-      font-weight: 800;
+    font-weight: 700;
   }
 
   h1, h2, #game-status, #score-player1, #score-player2, #score-ties {
-      text-shadow: 0 0 15px rgba(212, 160, 23, 0.9);
-  }
-
-  #canvas {
-      image-rendering: -webkit-optimize-contrast;
+    text-shadow: 0 0 10px hsl(54, 80%, 60%);
   }
 }
 
-/* Ultra-wide screens */
 @media (min-aspect-ratio: 21/9) {
   #canvas {
-      max-width: 70vw; /* Adjusted for larger board */
-      height: calc(70vw * 0.8); /* Adjusted */
+    max-width: 60vw;
+    max-height: calc(60vw * 0.75);
   }
 
   #menu, #game, #settings-menu, #how-to-play {
-      max-width: 60vw; /* Adjusted */
+    max-width: 50vw;
   }
 }
