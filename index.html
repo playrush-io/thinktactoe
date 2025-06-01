@@ -1,56 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tic-Tac-Toe</title>
-    <link rel="stylesheet" href="/src/styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic-Tac-Toe</title>
+  <link rel="stylesheet" href="/src/styles.css">
+ 
 </head>
 <body>
-    <div id="menu">
-        <h1>Tic-Tac-Toe</h1>
-        <button id="quickplay">Quick Play</button>
-        <button id="vscomputer">Vs Computer</button>
-        <button id="multiplayer" disabled>Multiplayer (Coming Soon)</button>
-        <button id="settings">Settings</button>
-        <button id="how-to-play-btn">How to Play</button>
+  <section id="menu">
+    <h1>Tic-Tac-Toe</h1>
+    <button id="quickplay">Quick Play</button>
+    <button id="vscomputer">Vs Computer</button>
+    <button id="settings">Settings</button>
+    <button id="how-to-play-btn">How to Play</button>
+  </section>
+
+  <section id="game" class="hidden">
+    <h2>Tic-Tac-Toe</h2>
+    <canvas id="canvas"></canvas>
+    <div id="game-feedback">
+      <div id="game-status">Player 1's turn</div>
+      <div id="score-display">
+        <div id="score-player1">Player 1: 0</div>
+        <div id="score-player2">Player 2: 0</div>
+        <div id="score-ties">Ties: 0</div>
+      </div>
     </div>
-    <div id="game" class="hidden">
-        <canvas id="canvas"></canvas>
-        <div id="game-status">Player 1's turn</div>
-        <div id="score-display">
-            <span id="score-player1">Player 1: 0</span>
-            <span id="score-player2">Player 2: 0</span>
-            <span id="score-ties">Ties: 0</span>
-        </div>
-        <div id="game-controls">
-            <button id="new-game">Restart Game</button>
-            <button id="back-to-menu">Back to Menu</button>
-        </div>
+    <div id="game-controls">
+      <button id="new-game">New Game</button>
+      <button id="reset-scores">Reset Scores</button>
+      <button id="back-to-menu">Back to Menu</button>
     </div>
-    <div id="settings-menu" class="hidden">
-        <h2>Settings</h2>
-        <label for="difficulty">Difficulty:</label>
-        <select id="difficulty">
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-        </select>
-        <button id="reset-scores">Reset Scores</button>
-        <button id="back">Back</button>
-    </div>
-    <div id="how-to-play" class="hidden">
-        <h2>How to Play</h2>
-        <p>Test your skills in this classic game of Tic-Tac-Toe!</p>
-        <ul>
-            <li>Player 1 uses <b>X</b>, Player 2 (or Computer) uses <b>O</b>.</li>
-            <li>Click a cell to place your symbol.</li>
-            <li>Win by aligning three of your symbols in a row, column, or diagonal.</li>
-            <li>Choose <b>Quick Play</b> for two-player mode or <b>Vs Computer</b> to challenge the AI.</li>
-            <li>Adjust difficulty in <b>Settings</b> for a tougher AI opponent.</li>
-        </ul>
-        <button id="back-from-how-to-play">Back</button>
-    </div>
-    <script type="module" src="/src/main.js"></script>
+  </section>
+
+  <section id="settings-menu" class="hidden">
+    <h2>Settings</h2>
+    <label for="difficulty">Difficulty:</label>
+    <select id="difficulty">
+      <option value="easy">Easy</option>
+      <option value="medium">Medium</option>
+      <option value="hard">Hard</option>
+    </select>
+    <button id="back">Back</button>
+  </section>
+
+  <section id="how-to-play" class="hidden">
+    <h2>How to Play</h2>
+    <p>Be the first to  get three X’s or O’s in a row, column, or diagonal to win</p>
+    <ul>
+      <li>Tap or click an empty square to add your X or O.</li>
+      <li>Play against a friend or the computer (choose easy, medium, or hard in Settings).</li>
+      <li>Reset your score anytime with the Reset button.</li>
+    </ul>
+    <button id="back-from-how-to-play">Back</button>
+  </section>
+
+  <script type="module" src="/src/main.js"></script>
 </body>
 </html>
