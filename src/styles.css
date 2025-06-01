@@ -38,6 +38,10 @@ body {
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
+.hidden {
+  display: none;
+}
+
 #menu.hidden, #game.hidden, #settings-menu.hidden, #how-to-play {
   opacity: 0;
   transform: scale(0.95);
@@ -57,7 +61,7 @@ body {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   box-shadow: 0 4px 12px rgba(0, 255, 136, 0.35);
-  touch-action: none; /* Prevent browser scrolling */
+  touch-action: none; 
 }
 
 h1, h2 {
@@ -194,7 +198,7 @@ button:disabled {
   color: #00ff88;
 }
 
-/* Mobile (PSP-like, <= 768px) */
+
 @media (max-width: 768px) {
   #menu, #game, #settings-menu, #how-to-play {
     width: clamp(260px, 90vw, 320px);
@@ -231,7 +235,7 @@ button:disabled {
   }
 }
 
-/* Wide screens (> 1200px) */
+
 @media (min-width: 1200px) {
   #menu, #game, #settings-menu, #how-to-play {
     width: clamp(360px, 40vw, 600px);
@@ -257,7 +261,7 @@ button:disabled {
   }
 }
 
-/* Landscape mobile (height <= 480px) */
+
 @media (max-height: 480px) and (orientation: landscape) {
   #menu, #game, #settings-menu, #how-to-play {
     width: clamp(260px, 60vw, 340px);
@@ -294,7 +298,7 @@ button:disabled {
   }
 }
 
-/* Fallback for no backdrop-filter */
+
 @supports not (backdrop-filter: blur(14px)) {
   #menu, #game, #settings-menu, #how-to-play, #canvas, #game-status, #score-player1, #score-player2, #score-ties, #settings-menu select, button {
     background: rgba(10, 20, 32, 0.75);

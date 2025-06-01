@@ -17,8 +17,7 @@ let clickSound, winSound, loseSound, tieSound;
 let scores = loadData().scores;
 let winningLine = null;
 let isTouching = false;
-let boardBase = null;
-let markerAnimations = [];
+let hoveredCell = null;
 
 const winningCombinations = [
     [0, 1, 2], [3, 4, 5], [6, 7, 8],
@@ -31,31 +30,32 @@ function init() {
     difficulty = savedData.settings.difficulty;
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a1420);
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const textureLoader = new THREE.TextureLoader();
+    textureLoader.load('/assets/paper-texture.jpg', (texture) => {
+        scene.background = texture;
+    }, undefined, () => {
+        scene.background = new THREE.Color(0xf5f5dc);
+    });
+
+    camera = new THREE.OrthographicCamera(window.innerWidth / -20, window.innerWidth / 20, window.innerHeight / 20, window.innerHeight / -20, 1, 1000);
     renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true });
     updateRendererSize();
 
     controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableZoom = true;
+    controls.enableZoom = false;
     controls.enablePan = false;
     controls.maxPolarAngle = Math.PI / 2;
     updateCamera();
 
-    const ambientLight = new THREE.AmbientLight(0x606060, 1.0);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
     scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    directionalLight.position.set(10, 15, 10);
-    scene.add(directionalLight);
 
     try {
         clickSound = new Audio('/assets/click.wav');
         winSound = new Audio('/assets/wins.wav');
         loseSound = new Audio('/assets/lose.mp3');
         tieSound = new Audio('/assets/tie.wav');
-    } catch (e) {
-        console.warn('Failed to load audio files:', e);
-    }
+    } catch (e) {}
 
     createBoard();
     setupEventListeners();
@@ -69,16 +69,9 @@ function init() {
         difficulty = savedGame.difficulty;
         gameActive = savedGame.gameActive;
         winningLine = savedGame.winningLine;
-        const menu = document.getElementById('menu');
-        const game = document.getElementById('game');
-        if (menu && game) {
-            menu.classList.add('hidden');
-            game.classList.remove('hidden');
-        }
-        const gameStatus = document.getElementById('game-status');
-        if (gameStatus) {
-            gameStatus.textContent = gameActive ? `${currentPlayer}'s turn` : (winningLine ? `${currentPlayer} wins!` : "It's a tie!");
-        }
+        document.getElementById('menu').classList.add('hidden');
+        document.getElementById('game').classList.remove('hidden');
+        document.getElementById('game-status').textContent = gameActive ? `${currentPlayer}'s turn` : (winningLine ? `${currentPlayer} wins!` : "It's a tie!");
         updateScoreDisplay();
         board.forEach((player, index) => {
             if (player) {
@@ -101,17 +94,17 @@ function updateRendererSize() {
     const height = container.clientHeight || window.innerHeight;
     renderer.setSize(width, height, false);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    camera.aspect = width / height;
+    camera.left = width / -20;
+    camera.right = width / 20;
+    camera.top = height / 20;
+    camera.bottom = height / -20;
     camera.updateProjectionMatrix();
 }
 
 function updateCamera() {
     const isMobile = window.innerWidth <= 768 || window.innerHeight <= 768;
-    const aspect = window.innerWidth / window.innerHeight;
-    camera.fov = isMobile ? 60 : 75;
-    camera.position.set(0, 10, isMobile ? 14 : 12);
-    controls.minDistance = isMobile ? 8 : 10;
-    controls.maxDistance = isMobile ? 18 : 25;
+    const zoomFactor = isMobile ? 15 : 12;
+    camera.position.set(0, zoomFactor, 0);
     camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
     controls.update();
@@ -134,8 +127,6 @@ function setupEventListeners() {
         if (el) {
             el.addEventListener('click', handler);
             el.addEventListener('touchend', (e) => { e.preventDefault(); handler(); });
-        } else {
-            console.error(`Critical DOM element #${id} not found.`);
         }
     }
 
@@ -165,51 +156,76 @@ function createBoard() {
         if (cell.material) cell.material.dispose();
     });
     cells = [];
-    if (boardBase) {
-        scene.remove(boardBase);
-        if (boardBase.geometry) boardBase.geometry.dispose();
-        if (boardBase.material) boardBase.material.dispose();
-    }
+
+    scene.children.forEach(child => {
+        if (child.isLineSegments || child.isMesh) {
+            scene.remove(child);
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) child.material.dispose();
+        }
+    });
 
     const isMobile = window.innerWidth <= 768 || window.innerHeight <= 768;
-    const boardScaleFactor = Math.min(Math.max(window.innerWidth, window.innerHeight) / 400, 3.5);
-    const cellScaleFactor = isMobile ? 4.0 : 5.5;
-    const boardGeometry = new THREE.BoxGeometry(6 * boardScaleFactor, 0.4, 6 * boardScaleFactor);
-    const boardMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
-    boardBase = new THREE.Mesh(boardGeometry, boardMaterial);
+    const boardScaleFactor = Math.min(Math.max(window.innerWidth, window.innerHeight) / 400, 6.0);
+    const spacing = 2.5 * boardScaleFactor;
+
+    const boardGeometry = new THREE.PlaneGeometry(7.5 * boardScaleFactor, 7.5 * boardScaleFactor);
+    const boardMaterial = new THREE.MeshBasicMaterial({ color: 0xf5f5dc });
+    const boardBase = new THREE.Mesh(boardGeometry, boardMaterial);
+    boardBase.position.y = 0.01;
     scene.add(boardBase);
 
-    const cellGeometry = new THREE.BoxGeometry(0.9 * cellScaleFactor, 0.1, 0.9 * cellScaleFactor);
-    const cellMaterial = new THREE.MeshBasicMaterial({ color: 0xcccccc });
+    const cellGeometry = new THREE.PlaneGeometry(2.4 * boardScaleFactor, 2.4 * boardScaleFactor);
+    const cellMaterial = new THREE.MeshBasicMaterial({ visible: false });
 
-    const spacing = 1.8 * boardScaleFactor;
     for (let i = 0; i < 3; i++) {
         for (let j = 0; j < 3; j++) {
             const cell = new THREE.Mesh(cellGeometry, cellMaterial.clone());
             const x = (i - 1) * spacing;
             const z = (j - 1) * spacing;
-            cell.position.set(x, 0.6, z); // Fixed: Changed 'acid' to 'cell'
-            cell.userData = { index: i * 3 + j, baseColor: 0xcccccc };
+            cell.position.set(x, 0.01, z);
+            cell.rotation.x = -Math.PI / 2;
+            cell.userData = { index: i * 3 + j };
             scene.add(cell);
             cells.push(cell);
+
+            const hoverGeometry = new THREE.PlaneGeometry(2.4 * boardScaleFactor, 2.4 * boardScaleFactor);
+            const hoverMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0.1, transparent: true, visible: false });
+            const hoverPlane = new THREE.Mesh(hoverGeometry, hoverMaterial);
+            hoverPlane.position.set(x, 0.012, z);
+            hoverPlane.rotation.x = -Math.PI / 2;
+            hoverPlane.userData = { index: i * 3 + j };
+            scene.add(hoverPlane);
+            cell.userData.hoverPlane = hoverPlane;
         }
     }
 
-    const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
-    const points = [];
-    for (let i = 0; i <= 3; i++) {
-        const x = i * spacing - 1.5 * spacing;
-        points.push(new THREE.Vector3(x, 0.4, -1.5 * spacing));
-        points.push(new THREE.Vector3(x, 0.4, 1.5 * spacing));
-    }
-    for (let j = 0; j <= 3; j++) {
-        const z = j * spacing - 1.5 * spacing;
-        points.push(new THREE.Vector3(-1.5 * spacing, 0.4, z));
-        points.push(new THREE.Vector3(1.5 * spacing, 0.4, z));
-    }
-    const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-    const gridLines = new THREE.LineSegments(lineGeometry, lineMaterial);
-    scene.add(gridLines);
+    const lineThickness = 0.3 * boardScaleFactor;
+    const lineMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+
+    const hLineGeometry1 = new THREE.PlaneGeometry(3.0 * spacing, lineThickness);
+    const hLine1 = new THREE.Mesh(hLineGeometry1, lineMaterial);
+    hLine1.position.set(0, 0.015, -0.5 * spacing);
+    hLine1.rotation.x = -Math.PI / 2;
+    scene.add(hLine1);
+
+    const hLineGeometry2 = new THREE.PlaneGeometry(3.0 * spacing, lineThickness);
+    const hLine2 = new THREE.Mesh(hLineGeometry2, lineMaterial);
+    hLine2.position.set(0, 0.015, 0.5 * spacing);
+    hLine2.rotation.x = -Math.PI / 2;
+    scene.add(hLine2);
+
+    const vLineGeometry1 = new THREE.PlaneGeometry(lineThickness, 3.0 * spacing);
+    const vLine1 = new THREE.Mesh(vLineGeometry1, lineMaterial);
+    vLine1.position.set(-0.5 * spacing, 0.015, 0);
+    vLine1.rotation.x = -Math.PI / 2;
+    scene.add(vLine1);
+
+    const vLineGeometry2 = new THREE.PlaneGeometry(lineThickness, 3.0 * spacing);
+    const vLine2 = new THREE.Mesh(vLineGeometry2, lineMaterial);
+    vLine2.position.set(0.5 * spacing, 0.015, 0);
+    vLine2.rotation.x = -Math.PI / 2;
+    scene.add(vLine2);
 }
 
 function onCanvasClick(event) {
@@ -220,7 +236,7 @@ function onCanvasClick(event) {
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    raycaster.params.Mesh.threshold = window.innerWidth <= 768 ? 1.8 : 1.2;
+    raycaster.params.Mesh.threshold = window.innerWidth <= 768 ? 2.5 : 1.5;
     const intersects = raycaster.intersectObjects(cells);
 
     if (intersects.length > 0 && gameActive) {
@@ -233,7 +249,11 @@ function onCanvasTouch(event) {
     if (isTouching) return;
     isTouching = true;
     setTimeout(() => { isTouching = false; }, 200);
-    event.preventDefault();
+
+    if (event.cancelable) {
+        event.preventDefault();
+    }
+
     const touch = event.touches[0];
     const canvas = renderer.domElement;
     const rect = canvas.getBoundingClientRect();
@@ -241,13 +261,8 @@ function onCanvasTouch(event) {
     mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    raycaster.params.Mesh.threshold = window.innerWidth <= 768 ? 1.8 : 1.2;
+    raycaster.params.Mesh.threshold = window.innerWidth <= 768 ? 2.5 : 1.5;
     const intersects = raycaster.intersectObjects(cells);
-
-    cells.forEach(cell => cell.material.color.setHex(cell.userData.baseColor));
-    if (intersects.length > 0 && gameActive && !board[intersects[0].object.userData.index]) {
-        intersects[0].object.material.color.setHex(0x00ff88);
-    }
 
     if (intersects.length > 0 && gameActive) {
         const index = intersects[0].object.userData.index;
@@ -256,7 +271,11 @@ function onCanvasTouch(event) {
 }
 
 function onTouchMove(event) {
-    event.preventDefault();
+
+    if (event.cancelable) {
+        event.preventDefault();
+    }
+
     const touch = event.touches[0];
     const canvas = renderer.domElement;
     const rect = canvas.getBoundingClientRect();
@@ -264,63 +283,98 @@ function onTouchMove(event) {
     mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    raycaster.params.Mesh.threshold = window.innerWidth <= 768 ? 1.8 : 1.2;
+    raycaster.params.Mesh.threshold = window.innerWidth <= 768 ? 2.5 : 1.5;
     const intersects = raycaster.intersectObjects(cells);
+    updateHoverEffect(intersects);
+}
 
-    cells.forEach(cell => cell.material.color.setHex(cell.userData.baseColor));
-    if (intersects.length > 0 && gameActive && !board[intersects[0].object.userData.index]) {
-        intersects[0].object.material.color.setHex(0x00ff88);
+function onMouseMove(event) {
+    const canvas = renderer.domElement;
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    raycaster.params.Mesh.threshold = window.innerWidth <= 768 ? 2.5 : 1.5;
+    const intersects = raycaster.intersectObjects(cells);
+    updateHoverEffect(intersects);
+}
+
+function updateHoverEffect(intersects) {
+    if (hoveredCell) {
+        hoveredCell.userData.hoverPlane.material.visible = false;
+        hoveredCell = null;
+    }
+
+    if (intersects.length > 0 && gameActive) {
+        const cell = intersects[0].object;
+        const index = cell.userData.index;
+        if (!board[index]) {
+            hoveredCell = cell;
+            hoveredCell.userData.hoverPlane.material.visible = true;
+        }
     }
 }
 
 function createMarker(type, position, index) {
-    if (!position || typeof position.x !== 'number' || typeof position.z !== 'number') {
-        console.error(`Invalid position for marker at index ${index}`);
-        return;
-    }
+    if (!position || typeof position.x !== 'number' || typeof position.z !== 'number') return;
     const isMobile = window.innerWidth <= 768 || window.innerHeight <= 768;
-    const markerScaleFactor = isMobile ? 3.0 : 4.0;
-    let geometry, material, marker;
+    const markerScaleFactor = isMobile ? 3.0 : 4.5;
+    const lineWidth = isMobile ? 0.1 : 0.15;
+    const material = new THREE.LineBasicMaterial({ color: type === 'Player 1' ? 0xff0000 : 0x0000ff, linewidth: lineWidth });
 
+    let marker;
     if (type === 'Player 1') {
-        const box1 = new THREE.BoxGeometry(0.8 * markerScaleFactor, 0.3, 0.3);
-        const box2 = new THREE.BoxGeometry(0.8 * markerScaleFactor, 0.3, 0.3);
-        box2.rotateZ(Math.PI / 2);
-        geometry = BufferGeometryUtils.mergeGeometries([box1, box2]);
-        material = new THREE.MeshBasicMaterial({ color: 0xff3333 });
+        const size = 1.0 * markerScaleFactor;
+        const geometry1 = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(-size / 2, 0, -size / 2),
+            new THREE.Vector3(size / 2, 0, size / 2)
+        ]);
+        const geometry2 = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(size / 2, 0, -size / 2),
+            new THREE.Vector3(-size / 2, 0, size / 2)
+        ]);
+        const geometries = [geometry1, geometry2];
+        const mergedGeometry = BufferGeometryUtils.mergeGeometries(geometries);
+        marker = new THREE.LineSegments(mergedGeometry, material);
     } else {
-        geometry = new THREE.RingGeometry(0.25 * markerScaleFactor, 0.45 * markerScaleFactor, 32);
-        material = new THREE.MeshBasicMaterial({ color: 0x3333ff, side: THREE.DoubleSide });
+        const radius = 0.5 * markerScaleFactor;
+        const segments = 32;
+        const points = [];
+        for (let i = 0; i <= segments; i++) {
+            const theta = (i / segments) * Math.PI * 2;
+            points.push(new THREE.Vector3(Math.cos(theta) * radius, 0, Math.sin(theta) * radius));
+        }
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        marker = new THREE.LineLoop(geometry, material);
     }
 
-    marker = new THREE.Mesh(geometry, material);
-    marker.position.set(position.x, 0.7, position.z);
-    marker.rotation.x = Math.PI / 2;
-    marker.scale.set(0.1, 0.1, 0.1);
+    marker.position.set(position.x, 0.01, position.z);
+    marker.rotation.x = -Math.PI / 4;
     marker.userData = { index };
     scene.add(marker);
     markers.push(marker);
 
-    markerAnimations.push({
-        marker,
-        targetScale: new THREE.Vector3(1, 1, 1),
-        progress: 0,
-        speed: 0.12
-    });
-
-    if (clickSound) {
-        clickSound.play().catch(e => console.warn('Click sound playback failed:', e));
-    }
+    if (clickSound) clickSound.play().catch(() => {});
 }
 
-function animateMarkers() {
-    markerAnimations = markerAnimations.filter(anim => anim.progress < 1);
-    markerAnimations.forEach(anim => {
-        anim.progress += anim.speed;
-        if (anim.progress > 1) anim.progress = 1;
-        const scale = anim.progress;
-        anim.marker.scale.lerp(anim.targetScale, scale);
-    });
+function highlightWinningLine(combo) {
+    const isMobile = window.innerWidth <= 768 || window.innerHeight <= 768;
+    const boardScaleFactor = Math.min(Math.max(window.innerWidth, window.innerHeight) / 400, 6.0);
+    const spacing = 2.5 * boardScaleFactor;
+    const lineWidth = isMobile ? 0.2 : 0.3;
+    const material = new THREE.LineBasicMaterial({ color: 0xffff00, linewidth: lineWidth });
+
+    const startCell = cells[combo[0]].position;
+    const endCell = cells[combo[2]].position;
+    const points = [
+        new THREE.Vector3(startCell.x, 0.02, startCell.z),
+        new THREE.Vector3(endCell.x, 0.02, endCell.z)
+    ];
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const line = new THREE.Line(geometry, material);
+    scene.add(line);
+    markers.push(line);
 }
 
 function loadData() {
@@ -339,7 +393,6 @@ function loadData() {
         }
         return data;
     } catch (e) {
-        console.warn('Failed to parse localStorage:', e);
         return defaultData;
     }
 }
@@ -352,9 +405,7 @@ function saveData() {
     };
     try {
         localStorage.setItem('ticTacToeData', JSON.stringify(data));
-    } catch (e) {
-        console.warn('Failed to save to localStorage:', e);
-    }
+    } catch (e) {}
 }
 
 function isValidGameState(state) {
@@ -389,50 +440,27 @@ function updateScore(winner) {
         const scoreElement = document.getElementById(`score-${winner.toLowerCase().replace(' ', '')}`);
         if (scoreElement) scoreElement.textContent = `${winner}: ${scores[winner]}`;
         if (winner === 'Player 1' && winSound) {
-            winSound.play().catch(e => console.warn('Win sound playback failed:', e));
+            winSound.play().catch(() => {});
         } else if (winner === 'Player 2' && loseSound) {
-            loseSound.play().catch(e => console.warn('Lose sound playback failed:', e));
+            loseSound.play().catch(() => {});
         }
     } else {
         scores['Ties']++;
         saveData();
         const scoreTies = document.getElementById('score-ties');
         if (scoreTies) scoreTies.textContent = `Ties: ${scores['Ties']}`;
-        if (tieSound) tieSound.play().catch(e => console.warn('Tie sound playback failed:', e));
-    }
-}
-
-function highlightWinningLine(combo) {
-    combo.forEach(index => {
-        const cell = cells[index];
-        if (cell) {
-            cell.material.color.setHex(currentPlayer === 'Player 1' ? 0xff3333 : 0x3333ff);
-        }
-    });
-}
-
-function onMouseMove(event) {
-    const canvas = renderer.domElement;
-    const rect = canvas.getBoundingClientRect();
-    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-    raycaster.setFromCamera(mouse, camera);
-    raycaster.params.Mesh.threshold = window.innerWidth <= 768 ? 1.8 : 1.2;
-    const intersects = raycaster.intersectObjects(cells);
-
-    cells.forEach(cell => cell.material.color.setHex(cell.userData.baseColor));
-    if (intersects.length > 0 && gameActive && !board[intersects[0].object.userData.index]) {
-        intersects[0].object.material.color.setHex(0x00ff88);
+        if (tieSound) tieSound.play().catch(() => {});
     }
 }
 
 function showHowToPlay() {
     const menu = document.getElementById('menu');
     const howToPlay = document.getElementById('how-to-play');
+    const canvas = document.getElementById('canvas');
     if (menu && howToPlay) {
         menu.classList.add('hidden');
         howToPlay.classList.remove('hidden');
+        if (canvas) canvas.style.display = 'none';
     }
 }
 
@@ -461,8 +489,6 @@ function startGame(isVsComputer) {
         if (marker.material) marker.material.dispose();
     });
     markers = [];
-    markerAnimations = [];
-    cells.forEach(cell => cell.material.color.setHex(0xcccccc));
     updateScoreDisplay();
     saveData();
     createBoard();
@@ -486,8 +512,6 @@ function restartGame() {
         if (marker.material) marker.material.dispose();
     });
     markers = [];
-    markerAnimations = [];
-    cells.forEach(cell => cell.material.color.setHex(0xcccccc));
     updateScoreDisplay();
     saveData();
     createBoard();
@@ -656,7 +680,6 @@ function onWindowResize() {
 function animate() {
     requestAnimationFrame(animate);
     controls.update();
-    animateMarkers();
     renderer.render(scene, camera);
 }
 
