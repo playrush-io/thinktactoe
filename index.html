@@ -1,61 +1,185 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tic-Tac-Toe</title>
-  <link rel="stylesheet" href="/src/styles.css">
-  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThinkTacToe - Face an AI that gets smarter with every win</title>
+    <meta name="description" content="ThinkTacToe - a challenging game where the AI opponent gets progressively smarter as you win rounds. Test your skills in this addictive tug-of-war scoring system.">
+    <link rel="canonical" href="https://thinktactoe.playrush.io">
+    <link rel="stylesheet" href="src/styles.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
 </head>
 <body>
-  <section id="menu">
-    <h1>Tic-Tac-Toe</h1>
-    <button id="quickplay">Quick Play</button>
-    <button id="vscomputer">Vs Computer</button>
-    <button id="settings">Settings</button>
-    <button id="how-to-play-btn">How to Play</button>
-  </section>
+    <main id="app">
+    
+        <section id="match-setup" class="screen active">
+            <div class="min-h-screen flex items-center justify-center p-4">
+                <div class="max-w-md w-full space-y-8 animate-slide-in">
+                    <header class="text-center">
+                        <h1 class="text-4xl font-bold text-primary mb-2">ThinkTacToe</h1>
+                
+                        <p class="text-muted-foreground">
+                            Face an AI that gets smarter with every win
+                        </p>
+                    </header>
 
-  <section id="game" class="hidden">
-    <h2>Tic-Tac-Toe</h2>
-    <canvas id="canvas"></canvas>
-    <div id="game-feedback">
-      <div id="game-status">Player 1's turn</div>
-      <div id="score-display">
-        <div id="score-player1">Player 1: 0</div>
-        <div id="score-player2">Player 2: 0</div>
-        <div id="score-ties">Ties: 0</div>
-      </div>
-    </div>
-    <div id="game-controls">
-      <button id="new-game">New Game</button>
-      <button id="reset-scores">Reset Scores</button>
-      <button id="back-to-menu">Back to Menu</button>
-    </div>
-  </section>
+                    <div class="card p-6 card-shadow">
+                        <div class="text-center mb-6">
+                            <div id="total-score" class="text-3xl font-bold text-accent">0</div>
+                            <div class="text-sm text-muted-foreground">Total Score</div>
+                        </div>
 
-  <section id="settings-menu" class="hidden">
-    <h2>Settings</h2>
-    <label for="difficulty">Difficulty:</label>
-    <select id="difficulty">
-      <option value="easy">Easy</option>
-      <option value="medium">Medium</option>
-      <option value="hard">Hard</option>
-    </select>
-    <button id="back">Back</button>
-  </section>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-sm font-medium text-foreground block mb-3">
+                                    Choose Match Length:
+                                </label>
+                                <div id="round-options" class="grid grid-cols-3 gap-2">
+                                    <button class="btn btn-outline round-option h-12" data-rounds="3">3</button>
+                                    <button class="btn btn-game round-option h-12" data-rounds="5">5</button>
+                                    <button class="btn btn-outline round-option h-12" data-rounds="7">7</button>
+                                    <button class="btn btn-outline round-option h-12" data-rounds="10">10</button>
+                                    <button class="btn btn-outline round-option h-12" data-rounds="15">15</button>
+                                </div>
+                            </div>
 
-  <section id="how-to-play" class="hidden">
-    <h2>How to Play</h2>
-    <p>Be the first to  get three X’s or O’s in a row, column, or diagonal to win</p>
-    <ul>
-      <li>Tap or click an empty square to add your X or O.</li>
-      <li>Play against a friend or the computer (choose easy, medium, or hard in Settings).</li>
-      <li>Reset your score anytime with the Reset button.</li>
-    </ul>
-    <button id="back-from-how-to-play">Back</button>
-  </section>
+                            <button id="start-match" class="btn btn-glow btn-lg w-full">
+                                Start Match (5 rounds)
+                            </button>
+                        </div>
+                    </div>
 
-  <script type="module" src="/src/main.js"></script>
+                    <div class="text-center text-sm text-muted-foreground">
+                        <p>• Win rounds to increase your score</p>
+                        <p>• Lose rounds to decrease your score</p>
+                        <p>• AI gets smarter as you win more</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        
+        <section id="game-view" class="screen">
+            <div class="min-h-screen p-4">
+                <div class="max-w-2xl mx-auto space-y-6">
+        
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="card p-4 card-shadow">
+                            <div class="text-center">
+                                <div id="match-score" class="text-2xl font-bold text-primary">0</div>
+                                <div class="text-sm text-muted-foreground">Match Score</div>
+                            </div>
+                        </div>
+                        
+                        <div class="card p-4 card-shadow">
+                            <div class="text-center">
+                                <div id="game-total-score" class="text-2xl font-bold text-accent">0</div>
+                                <div class="text-sm text-muted-foreground">Total Score</div>
+                            </div>
+                        </div>
+                        
+                        <div class="card p-4 card-shadow">
+                            <div class="text-center">
+                                <div id="round-info" class="text-lg font-semibold">Round 1/5</div>
+                                <div id="wins-losses" class="text-sm text-muted-foreground">
+                                    W: 0 • L: 0
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card p-4 card-shadow md:col-span-3">
+                            <div class="text-center">
+                                <div id="ai-difficulty-label" class="text-lg font-semibold text-primary">
+                                    AI Difficulty: Warming Up
+                                </div>
+                                <div class="w-full bg-muted rounded-full h-2 mt-2">
+                                    <div id="ai-difficulty-bar" class="bg-primary h-2 rounded-full smooth-transition" style="width: 10%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <h2 id="game-status" class="text-2xl font-bold mb-4 text-foreground">
+                            Your Turn
+                        </h2>
+                    </div>
+
+        
+                    <div id="game-board" class="game-board grid grid-cols-3 gap-2 p-4 bg-game-board rounded-xl card-shadow">
+                        <button class="game-cell aspect-square bg-game-cell rounded-lg smooth-transition hover:bg-game-cell-hover focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center text-4xl font-bold" data-index="0"></button>
+                        <button class="game-cell aspect-square bg-game-cell rounded-lg smooth-transition hover:bg-game-cell-hover focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center text-4xl font-bold" data-index="1"></button>
+                        <button class="game-cell aspect-square bg-game-cell rounded-lg smooth-transition hover:bg-game-cell-hover focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center text-4xl font-bold" data-index="2"></button>
+                        <button class="game-cell aspect-square bg-game-cell rounded-lg smooth-transition hover:bg-game-cell-hover focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center text-4xl font-bold" data-index="3"></button>
+                        <button class="game-cell aspect-square bg-game-cell rounded-lg smooth-transition hover:bg-game-cell-hover focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center text-4xl font-bold" data-index="4"></button>
+                        <button class="game-cell aspect-square bg-game-cell rounded-lg smooth-transition hover:bg-game-cell-hover focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center text-4xl font-bold" data-index="5"></button>
+                        <button class="game-cell aspect-square bg-game-cell rounded-lg smooth-transition hover:bg-game-cell-hover focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center text-4xl font-bold" data-index="6"></button>
+                        <button class="game-cell aspect-square bg-game-cell rounded-lg smooth-transition hover:bg-game-cell-hover focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center text-4xl font-bold" data-index="7"></button>
+                        <button class="game-cell aspect-square bg-game-cell rounded-lg smooth-transition hover:bg-game-cell-hover focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center text-4xl font-bold" data-index="8"></button>
+                    </div>
+
+                    <div class="flex justify-center">
+                        <button id="quit-match" class="btn btn-outline px-8">
+                            Quit Match
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <section id="match-results" class="screen">
+            <div class="min-h-screen flex items-center justify-center p-4">
+                <div class="max-w-md w-full space-y-6 animate-slide-in">
+                    <div class="text-center">
+                        <h1 id="result-title" class="text-4xl font-bold mb-4 text-primary">
+                            Victory!
+                        </h1>
+                    </div>
+
+                    <div class="card p-6 card-shadow">
+                        <div class="space-y-4">
+                            <div class="text-center">
+                                <div id="final-score" class="text-2xl font-bold text-foreground">
+                                    3 - 2
+                                </div>
+                                <div class="text-sm text-muted-foreground">
+                                    Rounds Won - Lost
+                                </div>
+                            </div>
+
+                            <div class="border-t border-border pt-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-muted-foreground">Score Change:</span>
+                                    <span id="score-change" class="text-lg font-bold text-primary">
+                                        +4
+                                    </span>
+                                </div>
+                                
+                                <div class="flex justify-between items-center mt-2">
+                                    <span class="text-sm text-muted-foreground">Total Score:</span>
+                                    <span id="new-total-score" class="text-xl font-bold text-accent">24</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <button id="play-again" class="btn btn-glow btn-lg w-full">
+                            Play Again
+                        </button>
+                        
+                        <div class="text-center text-sm text-muted-foreground">
+                            <p id="result-message">
+                                Great job! The AI will be tougher next time.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="src/main.js"></script>
 </body>
 </html>
