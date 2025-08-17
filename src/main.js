@@ -203,8 +203,7 @@ class TicTacToeGame {
       return availableMoves[Math.floor(Math.random() * availableMoves.length)];
     }
 
-    // Strategic moves
-    // 1. Try to win
+
     for (const move of availableMoves) {
       const testBoard = [...board];
       testBoard[move] = 'O';
@@ -213,7 +212,7 @@ class TicTacToeGame {
       }
     }
 
-    // 2. Block player from winning
+    
     for (const move of availableMoves) {
       const testBoard = [...board];
       testBoard[move] = 'X';
@@ -222,7 +221,7 @@ class TicTacToeGame {
       }
     }
 
-    // 3. Strategic positions (center, corners, edges)
+    
     const strategicMoves = [4, 0, 2, 6, 8, 1, 3, 5, 7];
     for (const move of strategicMoves) {
       if (availableMoves.includes(move)) {
@@ -264,7 +263,7 @@ class TicTacToeGame {
     this.gameState.currentPlayer = this.gameState.currentPlayer === 'X' ? 'O' : 'X';
     this.updateGameStatus();
 
-    // AI move
+    
     if (this.gameState.currentPlayer === 'O' && this.gameState.gameStatus === 'playing') {
       setTimeout(() => {
         const aiMove = this.getAIMove(this.gameState.board, this.matchState.aiDifficulty);
@@ -300,7 +299,7 @@ class TicTacToeGame {
       this.updateUI();
 
       if (this.matchState.currentRound > this.matchState.totalRounds) {
-        // Match ended
+        
         const finalTotalScore = this.matchState.totalScore + this.matchState.matchScore;
         localStorage.setItem('ticTacToeScore', finalTotalScore.toString());
         this.matchState.totalScore = finalTotalScore;
@@ -310,7 +309,7 @@ class TicTacToeGame {
         this.showScreen('match-results');
         this.updateMatchResults();
       } else {
-        // Start next round
+        
         this.gameState.reset();
         this.updateGameBoard();
         this.updateGameStatus();
