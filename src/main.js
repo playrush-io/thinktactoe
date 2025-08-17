@@ -198,7 +198,6 @@ class TicTacToeGame {
 
     if (availableMoves.length === 0) return null;
 
-    // Easy moves (random)
     if (Math.random() > difficulty) {
       return availableMoves[Math.floor(Math.random() * availableMoves.length)];
     }
