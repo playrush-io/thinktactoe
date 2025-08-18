@@ -1,4 +1,5 @@
 
+
 class GameState {
   constructor() {
     this.board = Array(9).fill(null);
